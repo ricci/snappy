@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+
+import arrow
+import sys
+import re
+from subprocess import check_output
+
+paths = { 'test' : '/test' }
+zfsmap = { }
+
+snapshots = { }
+
+class Snapshot:
+    def isSnappy(snap):
+        return re.match(r"snappy-\d+",snap)
+
+    def __init__(self,stamp):
+        self._stamp = stamp
+        self._zfs = None
+        self._tarsnap = None
+        snapshots[stamp] = self
+        
+    def hasZFS(self):
+        return (self._zfs is not None)
+
+    def setZFS(self,zfsname):
+        self._zfs = zfsname
+
+    def hasTarsnap(self):
+        return (self._tarsnap is not None)
+
+    def factory(stamp):
+        if stamp in snapshots:
+            return snapshots[stamp]
+        else:
+            return Snapshot(stamp)
+
+def initZFS():
+    print("InitZFS")
+    zfsout = check_output(["/sbin/zfs","list","-Hp"])
+    for line in iter(zfsout.splitlines()):
+        arr = line.decode('utf-8').split()
+        path, dataset = arr[4],arr[0]
+        zfsmap[path] = dataset
+        zfsmap[dataset] = path
+
+    zfsout = check_output(["/sbin/zfs","list","-Hp","-t","snap"])
+    for line in iter(zfsout.splitlines()):
+        arr = line.decode('utf-8').split()
+        snapname = arr[0]
+        dataset,snap = snapname.split('@')
+        if Snapshot.isSnappy(snap) and dataset in zfsmap and zfsmap[dataset] in paths.values():
+            newsnapshot = Snapshot.factory(snap)
+            newsnapshot.setZFS(snapname)
+
+        
+def initTarsnap():
+    tarsnapout = None
+
+def list():
+    initZFS()
+    for place, path in paths.items():
+        print("path %s %s" % (place, path))
+
+def usage():
+    print("snappy list")
+    exit(1)
+
+
+commands = { 'list' : list, 'usage' : usage }
+
+if len(sys.argv) < 2:
+    usage()
+else:
+    commands.get(sys.argv[1], usage)()
