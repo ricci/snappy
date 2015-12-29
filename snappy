@@ -5,20 +5,38 @@ import sys
 import re
 from subprocess import check_output
 
-paths = { 'test' : '/test' }
 zfsmap = { }
-
 snapshots = { }
+places = { }
+paths = { }
+
+class Place:
+    def __init__(self,name,path):
+        self._name = name
+        self._path = path
+        places[name] = self
+        paths[path] = self
+
+    def place(self):
+        return self._name
+
+    def path(self):
+        return self._path
+
+Place("test", "/test")
 
 class Snapshot:
     def isSnappy(snap):
         return re.match(r"snappy-\d+",snap)
 
-    def __init__(self,stamp):
+    def __init__(self,place,stamp):
+        self._place = place
         self._stamp = stamp
         self._zfs = None
         self._tarsnap = None
-        snapshots[stamp] = self
+        if not place in snapshots:
+            snapshots[place] = { }
+        snapshots[place][stamp] = self
         
     def hasZFS(self):
         return (self._zfs is not None)
@@ -29,14 +47,17 @@ class Snapshot:
     def hasTarsnap(self):
         return (self._tarsnap is not None)
 
-    def factory(stamp):
-        if stamp in snapshots:
-            return snapshots[stamp]
+    def printListing(self):
+        print("%s %s %s" % (self._stamp, self._zfs, self._tarsnap))
+
+    def factory(place,stamp):
+        print("Factory %s %s" % (place, stamp))
+        if place in snapshots and stamp in snapshots[place]:
+            return snapshots[place][stamp]
         else:
-            return Snapshot(stamp)
+            return Snapshot(place,stamp)
 
 def initZFS():
-    print("InitZFS")
     zfsout = check_output(["/sbin/zfs","list","-Hp"])
     for line in iter(zfsout.splitlines()):
         arr = line.decode('utf-8').split()
@@ -49,18 +70,19 @@ def initZFS():
         arr = line.decode('utf-8').split()
         snapname = arr[0]
         dataset,snap = snapname.split('@')
-        if Snapshot.isSnappy(snap) and dataset in zfsmap and zfsmap[dataset] in paths.values():
-            newsnapshot = Snapshot.factory(snap)
+        if Snapshot.isSnappy(snap) and dataset in zfsmap and zfsmap[dataset] in paths.keys():
+            newsnapshot = Snapshot.factory(paths[zfsmap[dataset]].place(), snap)
             newsnapshot.setZFS(snapname)
 
-        
 def initTarsnap():
     tarsnapout = None
 
 def list():
     initZFS()
-    for place, path in paths.items():
-        print("path %s %s" % (place, path))
+    for name, place in places.items():
+        print("***** %s (%s)" % (name,place.path()))
+        for stamp, snapshot in snapshots[name].items():
+            snapshot.printListing()
 
 def usage():
     print("snappy list")
