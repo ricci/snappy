@@ -26,8 +26,11 @@ class Place:
 Place("test", "/test")
 
 class Snapshot:
-    def isSnappy(snap):
-        return re.match(r"snappy-\d+",snap)
+    def isSnappyZFS(snap):
+        return re.match(r"snappy-(\d+)",snap)
+
+    def isSnappyTS(snap):
+        return re.match(r"snappy-(\w+)-(\d+)",snap)
 
     def __init__(self,place,stamp):
         self._place = place
@@ -43,6 +46,9 @@ class Snapshot:
 
     def setZFS(self,zfsname):
         self._zfs = zfsname
+
+    def setTarsnap(self, tarsnapname):
+        self._tarsnap = tarsnapname
 
     def hasTarsnap(self):
         return (self._tarsnap is not None)
@@ -70,15 +76,24 @@ def initZFS():
         arr = line.decode('utf-8').split()
         snapname = arr[0]
         dataset,snap = snapname.split('@')
-        if Snapshot.isSnappy(snap) and dataset in zfsmap and zfsmap[dataset] in paths.keys():
-            newsnapshot = Snapshot.factory(paths[zfsmap[dataset]].place(), snap)
+        if Snapshot.isSnappyZFS(snap) and dataset in zfsmap and zfsmap[dataset] in paths.keys():
+            newsnapshot = Snapshot.factory(paths[zfsmap[dataset]].place(), Snapshot.isSnappyZFS(snap).group(1))
             newsnapshot.setZFS(snapname)
 
 def initTarsnap():
-    tarsnapout = None
+    tsfile = open("/tmp/tarsnap-archives.txt","r")
+    for line in tsfile:
+        if Snapshot.isSnappyTS(line):
+            groups = Snapshot.isSnappyTS(line)
+            place = groups.group(1)
+            stamp = groups.group(2)
+            newsnapshot = Snapshot.factory(place,stamp)
+            newsnapshot.setTarsnap(line.rstrip())
+
 
 def list():
     initZFS()
+    initTarsnap()
     for name, place in places.items():
         print("***** %s (%s)" % (name,place.path()))
         for stamp, snapshot in snapshots[name].items():
