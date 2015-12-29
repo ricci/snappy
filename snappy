@@ -85,6 +85,8 @@ def initZFS():
         path, dataset = arr[4],arr[0]
         zfsmap[path] = dataset
         zfsmap[dataset] = path
+        if Place.hasPath(path):
+            zfsmap[Place.byPath(path).place()] = dataset
 
     zfsout = check_output(["/sbin/zfs","list","-Hp","-t","snap"])
     for line in iter(zfsout.splitlines()):
@@ -114,15 +116,25 @@ def list():
         for stamp, snapshot in snapshots[name].items():
             snapshot.printListing()
 
+time = arrow.now()
+curstamp = time.timestamp
+
 def snapZFS():
-    pass
+    initZFS()
+    # XXX: 
+    place = "test"
+
+    zfssnapname = "snappy-%s" % curstamp
+    zfsfullsnapname = "%s@%s" % (zfsmap[place],zfssnapname)
+    print("snapZFS: %s" % zfsfullsnapname)
+    check_output(["/sbin/zfs", "snapshot", zfsfullsnapname])
 
 def usage():
     print("snappy list")
     exit(1)
 
 
-commands = { 'list' : list, 'usage' : usage }
+commands = { 'list' : list, 'zfssnap' : snapZFS, 'usage' : usage }
 
 if len(sys.argv) < 2:
     usage()
