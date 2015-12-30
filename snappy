@@ -52,7 +52,7 @@ class Snapshot:
 
     def __init__(self,place,stamp):
         self._place = place
-        self._stamp = stamp
+        self._stamp = int(stamp)
         self._zfs = None
         self._tarsnap = None
         if not place in snapshots:
@@ -115,10 +115,10 @@ def initTarsnap():
 def list():
     initZFS()
     initTarsnap()
-    for name, place in Place._places.items():
+    for name, place in sorted(Place._places.items()):
         print("***** %s (%s)" % (name,place.path()))
-        for stamp, snapshot in snapshots[name].items():
-            snapshot.printListing()
+        for stamp in sorted(snapshots[name].keys(),key = lambda i: int(i)):
+            snapshots[name][stamp].printListing()
 
 time = arrow.now()
 curstamp = time.timestamp
