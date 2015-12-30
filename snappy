@@ -13,6 +13,14 @@ TARSNAP_BIN  = "/usr/local/bin/tarsnap"
 TARSNAP_ARGS = ["--keyfile", "/home/ricci/tarsnap-test/hactar-test.key", "--cachedir", "/home/ricci/tarsnap-test/.cache"]
 ZFS_BIN      = "/sbin/zfs"
 
+def getPlace():
+    # XXX: Return actual object, support more than one
+    place = sys.argv.pop(0)
+    if Place.hasName(place):
+        return place
+    else:
+        sys.exit("Specified nonexistent place {}".format(place))
+
 class Place:
 
     _places = { }
@@ -128,28 +136,32 @@ def list():
 time = arrow.now()
 curstamp = time.timestamp
 
-def snapZFS():
+def snapZFS(place = None):
+    if not place:
+        place = getPlace()
+
     initZFS()
-    # XXX: 
-    place = "test"
 
     zfssnapname = "snappy-%s" % curstamp
     zfsfullsnapname = "%s@%s" % (zfsmap[place],zfssnapname)
     print("snapZFS: %s" % zfsfullsnapname)
     check_output([ZFS_BIN, "snapshot", zfsfullsnapname])
 
-def snapTS():
+def snapTS(place = None):
+    if not place:
+        place = getPlace()
+
     initTarsnap()
-    # XXX: 
-    place = "test"
 
     tssnapname = "snappy-%s-%s" % (place, curstamp)
     print("snapTS: %s" % tssnapname)
     check_output([TARSNAP_BIN] + TARSNAP_ARGS + ["-c","-f",tssnapname,Place.byName(place).path()])
 
 def snapBoth():
-    snapZFS()
-    snapTS()
+    place = getPlace()
+
+    snapZFS(place)
+    snapTS(place)
 
 def usage():
     print("snappy list")
@@ -161,4 +173,5 @@ commands = { 'list' : list, 'snap' : snapBoth, 'zfssnap' : snapZFS, 'tssnap' : s
 if len(sys.argv) < 2:
     usage()
 else:
-    commands.get(sys.argv[1], usage)()
+    sys.argv.pop(0)
+    commands.get(sys.argv.pop(0), usage)()
