@@ -8,6 +8,9 @@ from subprocess import check_output
 zfsmap = { }
 snapshots = { }
 
+# XXX
+TARSNAP_ARGS = ["--keyfile", "/home/ricci/tarsnap-test/hactar-test.key", "--cachedir", "/home/ricci/tarsnap-test/.cache"]
+
 class Place:
 
     _places = { }
@@ -98,8 +101,9 @@ def initZFS():
             newsnapshot.setZFS(snapname)
 
 def initTarsnap():
-    tsfile = open("/tmp/tarsnap-archives.txt","r")
-    for line in tsfile:
+    tsout = check_output(["/usr/local/bin/tarsnap"] +  TARSNAP_ARGS + ["--list-archives"])
+    for line in iter(tsout.splitlines()):
+        line = line.decode('utf-8').split()
         if Snapshot.isSnappyTS(line):
             groups = Snapshot.isSnappyTS(line)
             place = groups.group(1)
