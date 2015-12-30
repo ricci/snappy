@@ -103,7 +103,7 @@ def initZFS():
 def initTarsnap():
     tsout = check_output(["/usr/local/bin/tarsnap"] +  TARSNAP_ARGS + ["--list-archives"])
     for line in iter(tsout.splitlines()):
-        line = line.decode('utf-8').split()
+        line = line.decode('utf-8')
         if Snapshot.isSnappyTS(line):
             groups = Snapshot.isSnappyTS(line)
             place = groups.group(1)
@@ -133,12 +133,25 @@ def snapZFS():
     print("snapZFS: %s" % zfsfullsnapname)
     check_output(["/sbin/zfs", "snapshot", zfsfullsnapname])
 
+def snapTS():
+    initTarsnap()
+    # XXX: 
+    place = "test"
+
+    tssnapname = "snappy-%s-%s" % (place, curstamp)
+    print("snapTS: %s" % tssnapname)
+    check_output(["/usr/local/bin/tarsnap"] + TARSNAP_ARGS + ["-c","-f",tssnapname,Place.byName(place).path()])
+
+def snapBoth():
+    snapZFS()
+    snapTS()
+
 def usage():
     print("snappy list")
     exit(1)
 
 
-commands = { 'list' : list, 'zfssnap' : snapZFS, 'usage' : usage }
+commands = { 'list' : list, 'snap' : snapBoth, 'zfssnap' : snapZFS, 'tssnap' : snapTS, 'usage' : usage }
 
 if len(sys.argv) < 2:
     usage()
