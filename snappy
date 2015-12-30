@@ -21,6 +21,14 @@ def getPlace():
     else:
         sys.exit("Specified nonexistent place {}".format(place))
 
+def getSnap(place):
+    if not place in snapshots:
+        sys.exit("Specified nonexistent place {}".format(place))
+    snap = sys.argv.pop(0)
+    if not snap in snapshots[place]:
+        sys.exit("Specified nonexistent snapshot {:d}".format(snap))
+    return snapshots[place][snap]
+
 class Place:
 
     _places = { }
@@ -133,6 +141,25 @@ def list():
         for stamp in sorted(snapshots[name].keys(),key = lambda i: int(i)):
             snapshots[name][stamp].printListing()
 
+def nuke():
+    initZFS()
+    initTarsnap()
+    place = getPlace()
+    snap = getSnap(place)
+    print("Gonna nuke %s" % snap)
+    if snap.hasZFS():
+        deleteZFS(snap)
+    if snap.hasTarsnap():
+        deleteTS(snap)
+
+def deleteZFS(snap):
+    print("deleteZFS: %s" % snap._zfs)
+    check_output([ZFS_BIN, "destroy", "-v", snap._zfs])
+
+def deleteTS(snap):
+    print("deleteTS: %s" % snap._tarsnap)
+    check_output([TARSNAP_BIN] + TARSNAP_ARGS + ["-d","-f",snap._tarsnap])
+
 time = arrow.now()
 curstamp = time.timestamp
 
@@ -168,7 +195,7 @@ def usage():
     exit(1)
 
 
-commands = { 'list' : list, 'snap' : snapBoth, 'zfssnap' : snapZFS, 'tssnap' : snapTS, 'usage' : usage }
+commands = { 'list' : list, 'snap' : snapBoth, 'zfssnap' : snapZFS, 'tssnap' : snapTS, 'usage' : usage, 'nuke' : nuke }
 
 if len(sys.argv) < 2:
     usage()
