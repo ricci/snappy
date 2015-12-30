@@ -8,8 +8,10 @@ from subprocess import check_output
 zfsmap = { }
 snapshots = { }
 
-# XXX
+# XXX: This stuff belongs in config files
+TARSNAP_BIN  = "/usr/local/bin/tarsnap"
 TARSNAP_ARGS = ["--keyfile", "/home/ricci/tarsnap-test/hactar-test.key", "--cachedir", "/home/ricci/tarsnap-test/.cache"]
+ZFS_BIN      = "/sbin/zfs"
 
 class Place:
 
@@ -84,7 +86,7 @@ class Snapshot:
             return Snapshot(place,stamp)
 
 def initZFS():
-    zfsout = check_output(["/sbin/zfs","list","-Hp"])
+    zfsout = check_output([ZFS_BIN,"list","-Hp"])
     for line in iter(zfsout.splitlines()):
         arr = line.decode('utf-8').split()
         path, dataset = arr[4],arr[0]
@@ -93,7 +95,7 @@ def initZFS():
         if Place.hasPath(path):
             zfsmap[Place.byPath(path).place()] = dataset
 
-    zfsout = check_output(["/sbin/zfs","list","-Hp","-t","snap"])
+    zfsout = check_output([ZFS_BIN,"list","-Hp","-t","snap"])
     for line in iter(zfsout.splitlines()):
         arr = line.decode('utf-8').split()
         snapname = arr[0]
@@ -103,7 +105,7 @@ def initZFS():
             newsnapshot.setZFS(snapname)
 
 def initTarsnap():
-    tsout = check_output(["/usr/local/bin/tarsnap"] +  TARSNAP_ARGS + ["--list-archives"])
+    tsout = check_output([TARSNAP_BIN] +  TARSNAP_ARGS + ["--list-archives"])
     for line in iter(tsout.splitlines()):
         line = line.decode('utf-8')
         if Snapshot.isSnappyTS(line):
@@ -134,7 +136,7 @@ def snapZFS():
     zfssnapname = "snappy-%s" % curstamp
     zfsfullsnapname = "%s@%s" % (zfsmap[place],zfssnapname)
     print("snapZFS: %s" % zfsfullsnapname)
-    check_output(["/sbin/zfs", "snapshot", zfsfullsnapname])
+    check_output([ZFS_BIN, "snapshot", zfsfullsnapname])
 
 def snapTS():
     initTarsnap()
@@ -143,7 +145,7 @@ def snapTS():
 
     tssnapname = "snappy-%s-%s" % (place, curstamp)
     print("snapTS: %s" % tssnapname)
-    check_output(["/usr/local/bin/tarsnap"] + TARSNAP_ARGS + ["-c","-f",tssnapname,Place.byName(place).path()])
+    check_output([TARSNAP_BIN] + TARSNAP_ARGS + ["-c","-f",tssnapname,Place.byName(place).path()])
 
 def snapBoth():
     snapZFS()
