@@ -191,7 +191,7 @@ def snapBoth():
     snapTS(place)
 
 def usage():
-    print("snappy list")
+    print("Do somethin' else")
     exit(1)
 
 
