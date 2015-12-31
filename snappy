@@ -194,8 +194,27 @@ def usage():
     print("Do somethin' else")
     exit(1)
 
+def check():
+    def startCheck(text):
+        print("### Checking {:s} ...".format(text))
+    def passCheck():
+        print("    passed")
+    def skipCheck(text):
+        print("    skipped ({:s})".format(text))
+    def failCheck(text,output):
+        print("    failed: {:s}".format(text))
+        if output:
+            print("----------------------------------------------------------------------")
+            print(output)
+            print("----------------------------------------------------------------------")
+    """
+    Run a little test to see whether everything appears to be configured properly
+    """
 
-commands = { 'list' : list, 'snap' : snapBoth, 'zfssnap' : snapZFS, 'tssnap' : snapTS, 'usage' : usage, 'nuke' : nuke }
+    startCheck("configuration file")
+    skipCheck("not implemented")
+
+commands = { 'list' : list, 'snap' : snapBoth, 'zfssnap' : snapZFS, 'tssnap' : snapTS, 'usage' : usage, 'nuke' : nuke, 'check' : check }
 
 if len(sys.argv) < 2:
     usage()
