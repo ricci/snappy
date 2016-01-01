@@ -8,24 +8,9 @@ from snappylib.place import Place
 from snappylib.snapshot import Snapshot, snapshots
 import snappylib.zfs as zfs
 import snappylib.tarsnap as tarsnap
+import snappylib.util as util
 
 from subprocess import check_output
-
-def getPlace():
-    # XXX: Return actual object, support more than one
-    place = sys.argv.pop(0)
-    if Place.hasName(place):
-        return place
-    else:
-        sys.exit("Specified nonexistent place {}".format(place))
-
-def getSnap(place):
-    if not place in snapshots:
-        sys.exit("Specified nonexistent place {}".format(place))
-    snap = sys.argv.pop(0)
-    if not snap in snapshots[place]:
-        sys.exit("Specified nonexistent snapshot {:d}".format(snap))
-    return snapshots[place][snap]
 
 # XXX: should be in a config file
 Place("test", "/test")
@@ -43,8 +28,8 @@ def list():
 def nuke():
     zfs.initCache()
     tarsnap.initCache()
-    place = getPlace()
-    snap = getSnap(place)
+    place = util.getPlace()
+    snap = util.getSnap(place)
     print("Gonna nuke %s" % snap)
     if snap.hasTarsnap():
         tarsnap.deleteSnap(snap)
@@ -56,16 +41,16 @@ curstamp = time.timestamp
 
 def snapZFS(place = None):
     if not place:
-        place = getPlace()
+        place = util.getPlace()
     zfs.createSnapshot(place,curstamp)
 
 def snapTS(place = None):
     if not place:
-        place = getPlace()
+        place = util.getPlace()
     tarsnap.createSnapshot(place,curstamp)
 
 def snapBoth():
-    place = getPlace()
+    place = util.getPlace()
 
     zfs.createSnapshot(place,curstamp)
     tarsnap.createSnapshot(place,curstamp)
