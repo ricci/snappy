@@ -3,6 +3,8 @@
 import sys
 from snappylib.snapshot import snapshots
 from snappylib.place import Place
+import snappylib.zfs as zfs
+import snappylib.tarsnap as tarsnap
 
 def getPlace():
     # XXX: Return actual object, support more than one
@@ -25,3 +27,26 @@ def getSnap(place):
         sys.exit("ERROR: Specified nonexistent snapshot {:d}".format(snap))
     return snapshots[place][snap]
 
+def loadSnapshots():
+    zfs.initCache()
+    tarsnap.initCache()
+
+def check():
+    def startCheck(text):
+        print("### Checking {:s} ...".format(text))
+    def passCheck():
+        print("    passed")
+    def skipCheck(text):
+        print("    skipped ({:s})".format(text))
+    def failCheck(text,output):
+        print("    failed: {:s}".format(text))
+        if output:
+            print("----------------------------------------------------------------------")
+            print(output)
+            print("----------------------------------------------------------------------")
+    """
+    Run a little test to see whether everything appears to be configured properly
+    """
+
+    startCheck("configuration file")
+    skipCheck("not implemented")

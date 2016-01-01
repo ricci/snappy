@@ -15,10 +15,11 @@ from subprocess import check_output
 # XXX: should be in a config file
 Place("test", "/test")
 
+time = arrow.now()
+curstamp = time.timestamp
 
 def list():
-    zfs.initCache()
-    tarsnap.initCache()
+    util.loadSnapshots()
     for name, place in sorted(Place._places.items()):
         print("***** %s (%s)" % (name,place.path()))
         Snapshot.printHeader()
@@ -26,32 +27,24 @@ def list():
             snapshots[name][stamp].printListing()
 
 def nuke():
-    zfs.initCache()
-    tarsnap.initCache()
+    util.loadSnapshots()
     place = util.getPlace()
     snap = util.getSnap(place)
-    print("Gonna nuke %s" % snap)
     if snap.hasTarsnap():
         tarsnap.deleteSnap(snap)
     if snap.hasZFS():
         zfs.deleteSnap(snap)
 
-time = arrow.now()
-curstamp = time.timestamp
-
-def snapZFS(place = None):
-    if not place:
-        place = util.getPlace()
+def snapZFS():
+    place = util.getPlace()
     zfs.createSnapshot(place,curstamp)
 
 def snapTS(place = None):
-    if not place:
-        place = util.getPlace()
+    place = util.getPlace()
     tarsnap.createSnapshot(place,curstamp)
 
 def snapBoth():
     place = util.getPlace()
-
     zfs.createSnapshot(place,curstamp)
     tarsnap.createSnapshot(place,curstamp)
 
@@ -60,24 +53,7 @@ def usage():
     exit(1)
 
 def check():
-    def startCheck(text):
-        print("### Checking {:s} ...".format(text))
-    def passCheck():
-        print("    passed")
-    def skipCheck(text):
-        print("    skipped ({:s})".format(text))
-    def failCheck(text,output):
-        print("    failed: {:s}".format(text))
-        if output:
-            print("----------------------------------------------------------------------")
-            print(output)
-            print("----------------------------------------------------------------------")
-    """
-    Run a little test to see whether everything appears to be configured properly
-    """
-
-    startCheck("configuration file")
-    skipCheck("not implemented")
+    util.check()
 
 commands = { 'list' : list, 'snap' : snapBoth, 'zfssnap' : snapZFS, 'tssnap' : snapTS, 'usage' : usage, 'nuke' : nuke, 'check' : check }
 
