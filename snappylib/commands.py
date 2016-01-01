@@ -77,9 +77,11 @@ newCommand("snapzfs", [ Command.ARG_PLACE ], "Create a new ZFS snapshot",
 
 def snapTS():
     place = util.getPlace()
-    tarsnap.createSnapshot(place,arrow.now().timestamp)
+    snap = util.getSnap(place)
+    # XXX: Crappy to get a snap object and pull out the stamp
+    tarsnap.createSnapshot(place,str(snap._stamp))
 
-newCommand("snapts", [ Command.ARG_PLACE ], "Create a new tarsnap snapshot",
+newCommand("snapts", [ Command.ARG_PLACE, Command.ARG_SNAP ], "Create a tarsnap snapshot from an existing ZFS snap",
         snapTS)
 
 def nuke():

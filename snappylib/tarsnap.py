@@ -5,6 +5,8 @@ from snappylib.place import Place
 import snappylib.zfs as zfs
 from subprocess import check_output
 
+import sys
+
 # XXX: This stuff belongs in config files
 TARSNAP_BIN  = "/usr/local/bin/tarsnap"
 TARSNAP_ARGS = ["--keyfile", "/home/ricci/tarsnap-test/hactar-test.key", "--cachedir", "/home/ricci/tarsnap-test/.cache"]
@@ -38,7 +40,7 @@ def createSnapshot(place, stamp):
     zfs.initCache()
 
     if not exists(place, stamp) or not snapshots[place][stamp].hasZFS():
-        sys.exit("ERROR: Trying to create tarsnap snapshot but no ZFS snap")
+        sys.exit("ERROR: Trying to create tarsnap snapshot but no ZFS snap ({},{})".format(place,stamp,))
 
     tssnapname = "snappy-%s-%s" % (place, stamp)
     print("snapTS: %s" % tssnapname)

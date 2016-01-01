@@ -18,6 +18,7 @@ def getPlace():
         sys.exit("ERROR: Specified nonexistent place {}".format(place))
 
 def getSnap(place):
+    loadSnapshots()
     if not place in snapshots:
         sys.exit("ERROR: Specified nonexistent place {}".format(place))
     if len(sys.argv) < 1:
