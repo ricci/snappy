@@ -9,6 +9,9 @@ import arrow
 
 snapshots = { }
 
+def exists(place,snap):
+    return place in snapshots and snap in snapshots[place]
+
 class Snapshot:
     def isSnappyZFS(snap):
         return re.match(r"snappy-(\d+)",snap)

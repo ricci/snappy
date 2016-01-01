@@ -1,7 +1,8 @@
 #!/usr/bin/env/python3
 
-from snappylib.snapshot import Snapshot
+from snappylib.snapshot import Snapshot, exists, snapshots
 from snappylib.place import Place
+import snappylib.zfs as zfs
 from subprocess import check_output
 
 # XXX: This stuff belongs in config files
@@ -33,6 +34,11 @@ def deleteSnap(snap):
 
 def createSnapshot(place, stamp):
     initCache()
+    # Force ZFS cache - probably has already been initialized, but be safe
+    zfs.initCache()
+
+    if not exists(place, stamp) or not snapshots[place][stamp].hasZFS():
+        sys.exit("ERROR: Trying to create tarsnap snapshot but no ZFS snap")
 
     tssnapname = "snappy-%s-%s" % (place, stamp)
     print("snapTS: %s" % tssnapname)

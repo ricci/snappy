@@ -45,4 +45,11 @@ def createSnapshot(place,stamp):
     zfsfullsnapname = "%s@%s" % (zfsmap[place],zfssnapname)
     print("snapZFS: %s" % zfsfullsnapname)
     check_output([ZFS_BIN, "snapshot", zfsfullsnapname])
+    # Place this in the global list in case tarsnap is going to want it
+    newsnapshot = Snapshot.factory(place,stamp)
+    newsnapshot.setZFS(zfsfullsnapname)
+
+def pathForSnapshot(snap):
+    dataset,snapname = snap._zfs.split('@')
+    print("pathForSnapshot %s" % snapname)
 
