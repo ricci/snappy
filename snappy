@@ -3,10 +3,13 @@
 import arrow
 import sys
 import re
+
+from snappylib.place import Place
+from snappylib.snapshot import Snapshot, snapshots
+
 from subprocess import check_output
 
 zfsmap = { }
-snapshots = { }
 
 # XXX: This stuff belongs in config files
 TARSNAP_BIN  = "/usr/local/bin/tarsnap"
@@ -29,77 +32,8 @@ def getSnap(place):
         sys.exit("Specified nonexistent snapshot {:d}".format(snap))
     return snapshots[place][snap]
 
-class Place:
-
-    _places = { }
-    _paths = { }
-
-    def __init__(self,name,path):
-        self._name = name
-        self._path = path
-        Place._places[name] = self
-        Place._paths[path] = self
-
-    def place(self):
-        return self._name
-
-    def path(self):
-        return self._path
-
-    def byName(name):
-        return Place._places[name]
-
-    def byPath(path):
-        return Place._paths[path]
-
-    def hasName(name):
-        return name in Place._places
-
-    def hasPath(path):
-        return  path in Place._paths
-
 # XXX: should be in a config file
 Place("test", "/test")
-
-class Snapshot:
-    def isSnappyZFS(snap):
-        return re.match(r"snappy-(\d+)",snap)
-
-    def isSnappyTS(snap):
-        return re.match(r"snappy-(\w+)-(\d+)",snap)
-
-    def __init__(self,place,stamp):
-        self._place = place
-        self._stamp = int(stamp)
-        self._zfs = None
-        self._tarsnap = None
-        if not place in snapshots:
-            snapshots[place] = { }
-        snapshots[place][stamp] = self
-        
-    def hasZFS(self):
-        return (self._zfs is not None)
-
-    def setZFS(self,zfsname):
-        self._zfs = zfsname
-
-    def setTarsnap(self, tarsnapname):
-        self._tarsnap = tarsnapname
-
-    def hasTarsnap(self):
-        return (self._tarsnap is not None)
-
-    def printHeader():
-        print("{:10}   {:<20s}   {:5}   {:5}".format("ID","When","ZFS","TS"))
-
-    def printListing(self):
-        print("{:10}   {:<20s}   {!r:5}   {!r:5}".format(self._stamp,arrow.get(self._stamp).humanize(), self.hasZFS(), self.hasTarsnap()))
-
-    def factory(place,stamp):
-        if place in snapshots and stamp in snapshots[place]:
-            return snapshots[place][stamp]
-        else:
-            return Snapshot(place,stamp)
 
 def initZFS():
     zfsout = check_output([ZFS_BIN,"list","-Hp"])
