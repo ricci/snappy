@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import arrow
 import sys
 import re
 
@@ -9,53 +8,24 @@ from snappylib.snapshot import Snapshot, snapshots
 import snappylib.zfs as zfs
 import snappylib.tarsnap as tarsnap
 import snappylib.util as util
+import snappylib.commands as commands
 
 from subprocess import check_output
 
 # XXX: should be in a config file
 Place("test", "/test")
 
-time = arrow.now()
-curstamp = time.timestamp
-
-def list():
-    util.loadSnapshots()
-    for name, place in sorted(Place._places.items()):
-        print("***** %s (%s)" % (name,place.path()))
-        Snapshot.printHeader()
-        for stamp in sorted(snapshots[name].keys(),key = lambda i: int(i)):
-            snapshots[name][stamp].printListing()
-
-def nuke():
-    util.loadSnapshots()
-    place = util.getPlace()
-    snap = util.getSnap(place)
-    if snap.hasTarsnap():
-        tarsnap.deleteSnap(snap)
-    if snap.hasZFS():
-        zfs.deleteSnap(snap)
-
-def snapZFS():
-    place = util.getPlace()
-    zfs.createSnapshot(place,curstamp)
-
-def snapTS(place = None):
-    place = util.getPlace()
-    tarsnap.createSnapshot(place,curstamp)
-
-def snapBoth():
-    place = util.getPlace()
-    zfs.createSnapshot(place,curstamp)
-    tarsnap.createSnapshot(place,curstamp)
-
 def usage():
     print("Do somethin' else")
     exit(1)
 
-def check():
-    util.check()
-
-commands = { 'list' : list, 'snap' : snapBoth, 'zfssnap' : snapZFS, 'tssnap' : snapTS, 'usage' : usage, 'nuke' : nuke, 'check' : check }
+commands = { 'list'    : commands.list,
+             'snap'    : commands.snapBoth,
+             'zfssnap' : commands.snapZFS,
+             'tssnap'  : commands.snapTS,
+             'usage'   : usage,
+             'nuke'    : commands.nuke,
+             'check'   : commands.check }
 
 if len(sys.argv) < 2:
     usage()
