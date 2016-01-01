@@ -7,12 +7,9 @@ import re
 from snappylib.place import Place
 from snappylib.snapshot import Snapshot, snapshots
 import snappylib.zfs as zfs
+import snappylib.tarsnap as tarsnap
 
 from subprocess import check_output
-
-# XXX: This stuff belongs in config files
-TARSNAP_BIN  = "/usr/local/bin/tarsnap"
-TARSNAP_ARGS = ["--keyfile", "/home/ricci/tarsnap-test/hactar-test.key", "--cachedir", "/home/ricci/tarsnap-test/.cache"]
 
 def getPlace():
     # XXX: Return actual object, support more than one
@@ -34,20 +31,9 @@ def getSnap(place):
 Place("test", "/test")
 
 
-def initTarsnap():
-    tsout = check_output([TARSNAP_BIN] +  TARSNAP_ARGS + ["--list-archives"])
-    for line in iter(tsout.splitlines()):
-        line = line.decode('utf-8')
-        if Snapshot.isSnappyTS(line):
-            groups = Snapshot.isSnappyTS(line)
-            place = groups.group(1)
-            stamp = groups.group(2)
-            newsnapshot = Snapshot.factory(place,stamp)
-            newsnapshot.setTarsnap(line.rstrip())
-
 def list():
     zfs.initCache()
-    initTarsnap()
+    tarsnap.initCache()
     for name, place in sorted(Place._places.items()):
         print("***** %s (%s)" % (name,place.path()))
         Snapshot.printHeader()
@@ -56,18 +42,14 @@ def list():
 
 def nuke():
     zfs.initCache()
-    initTarsnap()
+    tarsnap.initCache()
     place = getPlace()
     snap = getSnap(place)
     print("Gonna nuke %s" % snap)
+    if snap.hasTarsnap():
+        tarsnap.deleteSnap(snap)
     if snap.hasZFS():
         zfs.deleteSnap(snap)
-    if snap.hasTarsnap():
-        deleteTS(snap)
-
-def deleteTS(snap):
-    print("deleteTS: %s" % snap._tarsnap)
-    check_output([TARSNAP_BIN] + TARSNAP_ARGS + ["-d","-f",snap._tarsnap])
 
 time = arrow.now()
 curstamp = time.timestamp
@@ -80,18 +62,13 @@ def snapZFS(place = None):
 def snapTS(place = None):
     if not place:
         place = getPlace()
-
-    initTarsnap()
-
-    tssnapname = "snappy-%s-%s" % (place, curstamp)
-    print("snapTS: %s" % tssnapname)
-    check_output([TARSNAP_BIN] + TARSNAP_ARGS + ["-c","-f",tssnapname,Place.byName(place).path()])
+    tarsnap.createSnapshot(place,curstamp)
 
 def snapBoth():
     place = getPlace()
 
     zfs.createSnapshot(place,curstamp)
-    snapTS(place)
+    tarsnap.createSnapshot(place,curstamp)
 
 def usage():
     print("Do somethin' else")
