@@ -15,20 +15,8 @@ from subprocess import check_output
 # XXX: should be in a config file
 Place("test", "/test")
 
-def usage():
-    print("Do somethin' else")
-    exit(1)
-
-commands = { 'list'    : commands.list,
-             'snap'    : commands.snapBoth,
-             'zfssnap' : commands.snapZFS,
-             'tssnap'  : commands.snapTS,
-             'usage'   : usage,
-             'nuke'    : commands.nuke,
-             'check'   : commands.check }
-
 if len(sys.argv) < 2:
-    usage()
+    command.usage.call()
 else:
     sys.argv.pop(0)
-    commands.get(sys.argv.pop(0), usage)()
+    commands.byname.get(sys.argv.pop(0), commands.usage).call()
