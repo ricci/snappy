@@ -8,7 +8,7 @@ import snappylib.commands as commands
 place.Place("test", "/test")
 
 if len(sys.argv) < 2:
-    command.usage.call()
+    commands.usage.call()
 else:
     sys.argv.pop(0)
     commands.byname.get(sys.argv.pop(0), commands.usage).call()
