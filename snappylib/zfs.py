@@ -51,5 +51,6 @@ def createSnapshot(place,stamp):
 
 def pathForSnapshot(snap):
     dataset,snapname = snap._zfs.split('@')
-    print("pathForSnapshot %s" % snapname)
-
+    path = "{}/.zfs/snapshot/{}".format(zfsmap[dataset],snapname)
+    print("pathForSnapshot {} {}".format(snapname,path))
+    return path

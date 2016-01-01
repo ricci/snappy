@@ -42,4 +42,5 @@ def createSnapshot(place, stamp):
 
     tssnapname = "snappy-%s-%s" % (place, stamp)
     print("snapTS: %s" % tssnapname)
-    check_output([TARSNAP_BIN] + TARSNAP_ARGS + ["-c","-f",tssnapname,Place.byName(place).path()])
+    path = zfs.pathForSnapshot(snapshots[place][stamp])
+    check_output([TARSNAP_BIN] + TARSNAP_ARGS + ["-c","-f",tssnapname,path])
