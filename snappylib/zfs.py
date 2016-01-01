@@ -7,8 +7,13 @@ from snappylib.place import Place
 from snappylib.snapshot import Snapshot
 
 zfsmap = { }
+__INITIALIZED__ = False
 
 def initCache():
+    global __INITIALIZED__
+    if __INITIALIZED__:
+        return None
+
     zfsout = check_output([ZFS_BIN,"list","-Hp"])
     for line in iter(zfsout.splitlines()):
         arr = line.decode('utf-8').split()
@@ -27,6 +32,7 @@ def initCache():
             newsnapshot = Snapshot.factory(Place.byPath(zfsmap[dataset]).place(), Snapshot.isSnappyZFS(snap).group(1))
             newsnapshot.setZFS(snapname)
 
+    __INITIALIZED__ = True
 
 def deleteSnap(snap):
     print("deleteZFS: %s" % snap._zfs)

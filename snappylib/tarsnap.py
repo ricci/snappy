@@ -8,7 +8,13 @@ from subprocess import check_output
 TARSNAP_BIN  = "/usr/local/bin/tarsnap"
 TARSNAP_ARGS = ["--keyfile", "/home/ricci/tarsnap-test/hactar-test.key", "--cachedir", "/home/ricci/tarsnap-test/.cache"]
 
+__INITIALIZED__ = False
+
 def initCache():
+    global __INITIALIZED__
+    if __INITIALIZED__:
+        return None
+
     tsout = check_output([TARSNAP_BIN] +  TARSNAP_ARGS + ["--list-archives"])
     for line in iter(tsout.splitlines()):
         line = line.decode('utf-8')
@@ -18,6 +24,8 @@ def initCache():
             stamp = groups.group(2)
             newsnapshot = Snapshot.factory(place,stamp)
             newsnapshot.setTarsnap(line.rstrip())
+
+    __INITIALIZED__ = True
 
 def deleteSnap(snap):
     print("deleteTS: %s" % snap._tarsnap)
