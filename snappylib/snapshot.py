@@ -2,6 +2,7 @@
 
 import re
 from subprocess import check_output
+from snappylib.place import Place
 import arrow
 
 ### XXX I think these are more properly handled in a top level __init__()?
@@ -47,8 +48,12 @@ class Snapshot:
         print("{:10}   {:<20s}   {!r:5}   {!r:5}".format(self._stamp,arrow.get(self._stamp).humanize(), self.hasZFS(), self.hasTarsnap()))
 
     def factory(place,stamp):
-        if place in snapshots and stamp in snapshots[place]:
-            return snapshots[place][stamp]
+        if isinstance(place,Place):
+            placename = place.name()
         else:
-            return Snapshot(place,stamp)
+            placename = place
+        if place in snapshots and stamp in snapshots[placename]:
+            return snapshots[placename][stamp]
+        else:
+            return Snapshot(placename,stamp)
 

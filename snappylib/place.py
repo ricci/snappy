@@ -11,7 +11,7 @@ class Place:
         Place._places[name] = self
         Place._paths[path] = self
 
-    def place(self):
+    def name(self):
         return self._name
 
     def path(self):

@@ -39,10 +39,10 @@ def createSnapshot(place, stamp):
     # Force ZFS cache - probably has already been initialized, but be safe
     zfs.initCache()
 
-    if not exists(place, stamp) or not snapshots[place][stamp].hasZFS():
+    if not exists(place.name(), stamp) or not snapshots[place.name()][stamp].hasZFS():
         sys.exit("ERROR: Trying to create tarsnap snapshot but no ZFS snap ({},{})".format(place,stamp,))
 
-    tssnapname = "snappy-%s-%s" % (place, stamp)
+    tssnapname = "snappy-%s-%s" % (place.name(), stamp)
     print("snapTS: %s" % tssnapname)
-    path = zfs.pathForSnapshot(snapshots[place][stamp])
+    path = zfs.pathForSnapshot(snapshots[place.name()][stamp])
     check_output([TARSNAP_BIN] + TARSNAP_ARGS + ["-c","-f",tssnapname,path])
