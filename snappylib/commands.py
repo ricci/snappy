@@ -84,6 +84,15 @@ def snapTS():
 newCommand("snapts", [ Command.ARG_ID ], "Create a tarsnap snapshot from an existing ZFS snap",
         snapTS)
 
+def rmTS():
+    util.loadSnapshots()
+    snap = util.getSnapshot()
+    if snap.hasTarsnap():
+        tarsnap.deleteSnap(snap)
+
+newCommand("rmts", [ Command.ARG_ID ], "Remove the tarsnap half of an existing snap",
+        rmTS)
+
 def nuke():
     util.loadSnapshots()
     snap = util.getSnapshot()
@@ -93,4 +102,3 @@ def nuke():
         zfs.deleteSnap(snap)
 
 newCommand("nuke", [Command.ARG_ID ], "Remove snapsot", nuke)
-
