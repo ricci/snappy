@@ -11,6 +11,7 @@ import snappylib.tarsnap as tarsnap
 class Command:
     ARG_PLACE = "place"
     ARG_SNAP = "snap"
+    ARG_ID = "#id"
 
     def __init__(self, name, args, descr, function):
         self._name = name
@@ -76,22 +77,20 @@ newCommand("snapzfs", [ Command.ARG_PLACE ], "Create a new ZFS snapshot",
         snapZFS)
 
 def snapTS():
-    place = util.getPlace()
-    snap = util.getSnap(place)
+    snap = util.getSnapshot()
     # XXX: Crappy to get a snap object and pull out the stamp
-    tarsnap.createSnapshot(place,str(snap._stamp))
+    tarsnap.createSnapshot(Place.byName(snap._place),str(snap._stamp))
 
-newCommand("snapts", [ Command.ARG_PLACE, Command.ARG_SNAP ], "Create a tarsnap snapshot from an existing ZFS snap",
+newCommand("snapts", [ Command.ARG_ID ], "Create a tarsnap snapshot from an existing ZFS snap",
         snapTS)
 
 def nuke():
     util.loadSnapshots()
-    place = util.getPlace()
-    snap = util.getSnap(place)
+    snap = util.getSnapshot()
     if snap.hasTarsnap():
         tarsnap.deleteSnap(snap)
     if snap.hasZFS():
         zfs.deleteSnap(snap)
 
-newCommand("nuke", [Command.ARG_PLACE, Command.ARG_SNAP ], "Remove snapsot", nuke)
+newCommand("nuke", [Command.ARG_ID ], "Remove snapsot", nuke)
 

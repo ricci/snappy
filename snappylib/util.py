@@ -1,7 +1,7 @@
 #!/usr/bin/env/python3
 
 import sys
-from snappylib.snapshot import snapshots
+import snappylib.snapshot as snapshot
 from snappylib.place import Place
 import snappylib.zfs as zfs
 import snappylib.tarsnap as tarsnap
@@ -18,14 +18,36 @@ def getPlace():
 
 def getSnap(place):
     loadSnapshots()
-    if not place.name() in snapshots:
+    if not place.name() in snapshot.snapshots:
         sys.exit("ERROR: Specified nonexistent place {}".format(place))
     if len(sys.argv) < 1:
         sys.exit("ERROR: snapshot ID requrired")
     snap = sys.argv.pop(0)
-    if not snap in snapshots[place.name()]:
+    if not snap in snapshot.snapshots[place.name()]:
         sys.exit("ERROR: Specified nonexistent snapshot {:d}".format(snap))
-    return snapshots[place.name()][snap]
+    return snapshot.snapshots[place.name()][snap]
+
+def getSnapshot():
+    """
+    Get a snapshot, which can either be "place snap" or "#id"
+    """
+    if len(sys.argv) < 1:
+        sys.exit("ERROR: snapshot ID requrired")
+
+    loadSnapshots()
+
+    passed = sys.argv[0]
+
+    if passed[0:1] == "#":
+        sys.argv.pop(0)
+        if passed in snapshot.idmap:
+            return snapshot.idmap[passed]
+        else:
+            sys.exit("ERROR: Specified nonexistent snapshot {}".format(passed))
+    else:
+        place = getPlace()
+        snap = getSnap(place)
+        return snap
 
 def loadSnapshots():
     zfs.initCache()
