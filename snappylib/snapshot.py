@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import re
+import hashlib
+
 from subprocess import check_output
 from snappylib.place import Place
 import arrow
@@ -9,11 +11,16 @@ import arrow
 ### ... actually I think I need to figure out something signficantly different
 
 snapshots = { }
+idmap = { }
 
 def exists(place,snap):
     return place in snapshots and snap in snapshots[place]
 
 class Snapshot:
+
+    HASH = hashlib.sha256
+    HASH_LEN = 4
+
     def isSnappyZFS(snap):
         return re.match(r"snappy-(\d+)",snap)
 
@@ -42,10 +49,11 @@ class Snapshot:
         return (self._tarsnap is not None)
 
     def printHeader():
-        print("{:10}   {:<20s}   {:5}   {:5}".format("ID","When","ZFS","TS"))
+        print("{:5}   {:<20s}   {:5}   {:5}".format("ID","When","ZFS","TS"))
 
     def printListing(self):
-        print("{:10}   {:<20s}   {!r:5}   {!r:5}".format(self._stamp,arrow.get(self._stamp).humanize(), self.hasZFS(), self.hasTarsnap()))
+        #print("{:10}   {:<20s}   {!r:5}   {!r:5}".format(self._stamp,arrow.get(self._stamp).humanize(), self.hasZFS(), self.hasTarsnap()))
+        print("{:5}   {:<20s}   {!r:5}   {!r:5}".format(self.shortID(),arrow.get(self._stamp).humanize(), self.hasZFS(), self.hasTarsnap()))
 
     def factory(place,stamp):
         if isinstance(place,Place):
@@ -55,5 +63,14 @@ class Snapshot:
         if place in snapshots and stamp in snapshots[placename]:
             return snapshots[placename][stamp]
         else:
-            return Snapshot(placename,stamp)
+            newsnap = Snapshot(placename,stamp)
+            if newsnap.shortID() in idmap:
+                sys.exit("Internal error, ID collision")
+            idmap[newsnap.shortID()] = newsnap
+            return newsnap
+
+    def shortID(self):
+        digest = Snapshot.HASH(self._place.encode('utf-8') + str(self._stamp).encode('utf-8')).hexdigest()
+        return "#" + digest[0:Snapshot.HASH_LEN]
+        
 
