@@ -3,22 +3,20 @@
 from snappylib.snapshot import Snapshot, exists, snapshots
 from snappylib.place import Place
 import snappylib.zfs as zfs
+import snappylib.config as config
 from subprocess import check_output
 
 import sys
 
-# XXX: This stuff belongs in config files
-TARSNAP_BIN  = "/usr/local/bin/tarsnap"
-TARSNAP_ARGS = ["--keyfile", "/home/ricci/tarsnap-test/hactar-test.key", "--cachedir", "/home/ricci/tarsnap-test/.cache"]
-
-__INITIALIZED__ = False
+_initialized = False
 
 def initCache():
-    global __INITIALIZED__
-    if __INITIALIZED__:
+    global _initialized
+    if _initialized:
         return None
 
-    tsout = check_output([TARSNAP_BIN] +  TARSNAP_ARGS + ["--list-archives"])
+    tsout = check_output([config.world.tarsnap_bin] + 
+            config.world.tarsnap_extra_args + ["--list-archives"])
     for line in iter(tsout.splitlines()):
         line = line.decode('utf-8')
         if Snapshot.isSnappyTS(line):
@@ -28,11 +26,11 @@ def initCache():
             newsnapshot = Snapshot.factory(place,stamp)
             newsnapshot.setTarsnap(line.rstrip())
 
-    __INITIALIZED__ = True
+    _initialized = True
 
 def deleteSnap(snap):
     print("deleteTS: %s" % snap._tarsnap)
-    check_output([TARSNAP_BIN] + TARSNAP_ARGS + ["-d","-f",snap._tarsnap])
+    check_output([config.world.tarsnap_bin] + config.world.tarsnap_etra_args + ["-d","-f",snap._tarsnap])
 
 def createSnapshot(place, stamp):
     initCache()
@@ -45,4 +43,4 @@ def createSnapshot(place, stamp):
     tssnapname = "snappy-%s-%s" % (place.name(), stamp)
     print("snapTS: %s" % tssnapname)
     path = zfs.pathForSnapshot(snapshots[place.name()][stamp])
-    check_output([TARSNAP_BIN] + TARSNAP_ARGS + ["-c","-f",tssnapname,path])
+    check_output([config.world.tarsnap_bin] + config.world.tarsnap_extra_args + ["-c","-f",tssnapname,path])

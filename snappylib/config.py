@@ -5,7 +5,7 @@ import snappylib.place as Place
 
 # Since it only really makes sense to have one configuration at a time, access
 # it globally through this variable
-config = None
+world = None
 
 class Configuration:
 
@@ -21,17 +21,17 @@ class Configuration:
         self.places = []
 
 def loadINI(filename = "snappy.ini"):
-    conf = Configuration()
+    global world
+    world = Configuration()
     ini = configparser.ConfigParser()
     ini.read(filename)
     for name in ini.sections():
         section = ini[name]
         if name == "global":
-            conf.zfs_bin = section.get("zfs_bin", Configuration.ZFS_BIN)
-            conf.tarsnap_bin = section.get("tarsnap_bin", Configuration.TARSNAP_BIN)
-            conf.zfs_extra_args = section.get("zfs_extra_args","").split()
-            conf.tarsnap_extra_args = section.get("tarsnap_extra_args","").split()
+            world.zfs_bin = section.get("zfs_bin", Configuration.ZFS_BIN)
+            world.tarsnap_bin = section.get("tarsnap_bin", Configuration.TARSNAP_BIN)
+            world.zfs_extra_args = section.get("zfs_extra_args","").split()
+            world.tarsnap_extra_args = section.get("tarsnap_extra_args","").split()
         else:
             place = Place(name,section.get("path"))
-            places.append(place)
-    return conf
+            world.places.append(place)

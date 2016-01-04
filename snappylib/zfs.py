@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 
 from subprocess import check_output
-ZFS_BIN      = "/sbin/zfs"
 
 from snappylib.place import Place
 from snappylib.snapshot import Snapshot
+import snappylib.config as config
 
 zfsmap = { }
-__INITIALIZED__ = False
+_initialized = False
 
 def initCache():
-    global __INITIALIZED__
-    if __INITIALIZED__:
+    global _initialized
+    if _initialized:
         return None
 
-    zfsout = check_output([ZFS_BIN,"list","-Hp"])
+    zfsout = check_output([config.world.zfs_bin,"list","-Hp"])
     for line in iter(zfsout.splitlines()):
         arr = line.decode('utf-8').split()
         path, dataset = arr[4],arr[0]
@@ -23,7 +23,7 @@ def initCache():
         if Place.hasPath(path):
             zfsmap[Place.byPath(path).name()] = dataset
 
-    zfsout = check_output([ZFS_BIN,"list","-Hp","-t","snap"])
+    zfsout = check_output([config.world.zfs_bin,"list","-Hp","-t","snap"])
     for line in iter(zfsout.splitlines()):
         arr = line.decode('utf-8').split()
         snapname = arr[0]
@@ -32,11 +32,11 @@ def initCache():
             newsnapshot = Snapshot.factory(Place.byPath(zfsmap[dataset]).name(), Snapshot.isSnappyZFS(snap).group(1))
             newsnapshot.setZFS(snapname)
 
-    __INITIALIZED__ = True
+    _initialized = True
 
 def deleteSnap(snap):
     print("deleteZFS: %s" % snap._zfs)
-    check_output([ZFS_BIN, "destroy", "-v", snap._zfs])
+    check_output([config.world.zfs_bin, "destroy", "-v", snap._zfs])
 
 def createSnapshot(place,stamp):
     initCache()
@@ -44,7 +44,7 @@ def createSnapshot(place,stamp):
     zfssnapname = "snappy-%s" % stamp 
     zfsfullsnapname = "%s@%s" % (zfsmap[place.name()],zfssnapname)
     print("snapZFS: %s" % zfsfullsnapname)
-    check_output([ZFS_BIN, "snapshot", zfsfullsnapname])
+    check_output([config.world.zfs_bin, "snapshot", zfsfullsnapname])
     # Place this in the global list in case tarsnap is going to want it
     newsnapshot = Snapshot.factory(place,stamp)
     newsnapshot.setZFS(zfsfullsnapname)
