@@ -1,4 +1,4 @@
-#!/usr/bin/env/python3
+#!/usr/bin/env/python3.5
 
 from snappylib.snapshot import Snapshot, exists, snapshots
 import snappylib.zfs as zfs
