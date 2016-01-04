@@ -19,8 +19,8 @@ class Command:
         self._descr = descr
         self._function = function
 
-    def call(self,conf):
-        return self._function(conf)
+    def call(self):
+        return self._function()
 
     def describe(self):
         if self._args:
@@ -38,19 +38,19 @@ def newCommand(name, args, descr, function):
     byname[name] = cmd
     return cmd
 
-def usagemsg(conf):
+def usagemsg():
     print("Usage: snappy <command> [args]")
     for cmd in all:
         print(cmd.describe())
 
 usage = newCommand("help", None, "This usage message", usagemsg)
 
-def check(conf):
+def check():
     util.check()
 
 newCommand("check", None, "Perform some configuration checks", check)
 
-def list(conf):
+def list():
     util.loadSnapshots()
     for name, place in sorted(Place._places.items()):
         print("***** %s (%s)" % (name,place.path()))
@@ -60,7 +60,7 @@ def list(conf):
 
 newCommand("list", None, "List all snapshots", list)
 
-def snapBoth(conf):
+def snapBoth():
     place = util.getPlace()
     now = arrow.now().timestamp
     zfs.createSnapshot(place,now)
@@ -69,14 +69,14 @@ def snapBoth(conf):
 newCommand("snap", [ Command.ARG_PLACE ], "Create a new snapshot (both ZFS and tarsnap)",
         snapBoth)
 
-def snapZFS(conf):
+def snapZFS():
     place = util.getPlace()
     zfs.createSnapshot(place,arrow.now().timestamp)
 
 newCommand("snapzfs", [ Command.ARG_PLACE ], "Create a new ZFS snapshot",
         snapZFS)
 
-def snapTS(conf):
+def snapTS():
     snap = util.getSnapshot()
     # XXX: Crappy to get a snap object and pull out the stamp
     tarsnap.createSnapshot(Place.byName(snap._place),str(snap._stamp))
@@ -84,7 +84,7 @@ def snapTS(conf):
 newCommand("snapts", [ Command.ARG_ID ], "Create a tarsnap snapshot from an existing ZFS snap",
         snapTS)
 
-def rmTS(conf):
+def rmTS():
     util.loadSnapshots()
     snap = util.getSnapshot()
     if snap.hasTarsnap():
@@ -93,7 +93,7 @@ def rmTS(conf):
 newCommand("rmts", [ Command.ARG_ID ], "Remove the tarsnap half of an existing snap",
         rmTS)
 
-def nuke(conf):
+def nuke():
     util.loadSnapshots()
     snap = util.getSnapshot()
     if snap.hasTarsnap():

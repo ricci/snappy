@@ -3,16 +3,12 @@
 import sys
 import snappylib.place as place
 import snappylib.commands as commands
-import snappylib.config as config
 
 # XXX: should be in a config file
-#place.Place("test", "/test")
-
-# XXX Allow location to be passed on the command line
-conf = config.loadINI()
+place.Place("test", "/test")
 
 if len(sys.argv) < 2:
-    commands.usage.call(conf)
+    commands.usage.call()
 else:
     sys.argv.pop(0)
-    commands.byname.get(sys.argv.pop(0), commands.usage).call(conf)
+    commands.byname.get(sys.argv.pop(0), commands.usage).call()
