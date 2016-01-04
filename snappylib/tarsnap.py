@@ -2,8 +2,8 @@
 
 from snappylib.snapshot import Snapshot, exists, snapshots
 import snappylib.zfs as zfs
-import snappylib.config as config
 from subprocess import check_output
+from snappylib.configuration import config
 
 import sys
 
@@ -14,8 +14,8 @@ def initCache():
     if _initialized:
         return None
 
-    tsout = check_output([config.world.tarsnap_bin] + 
-            config.world.tarsnap_extra_args + ["--list-archives"])
+    tsout = check_output([config.tarsnap_bin] + 
+            config.tarsnap_extra_args + ["--list-archives"])
     for line in iter(tsout.splitlines()):
         line = line.decode('utf-8')
         if Snapshot.isSnappyTS(line):
@@ -29,7 +29,7 @@ def initCache():
 
 def deleteSnap(snap):
     print("deleteTS: %s" % snap._tarsnap)
-    check_output([config.world.tarsnap_bin] + config.world.tarsnap_extra_args + ["-d","-f",snap._tarsnap])
+    check_output([config.tarsnap_bin] + config.tarsnap_extra_args + ["-d","-f",snap._tarsnap])
 
 def createSnapshot(place, stamp):
     initCache()
@@ -42,4 +42,4 @@ def createSnapshot(place, stamp):
     tssnapname = "snappy-%s-%s" % (place.name, stamp)
     print("snapTS: %s" % tssnapname)
     path = zfs.pathForSnapshot(snapshots[place.name][stamp])
-    check_output([config.world.tarsnap_bin] + config.world.tarsnap_extra_args + ["-c","-f",tssnapname,path])
+    check_output([config.tarsnap_bin] + config.tarsnap_extra_args + ["-c","-f",tssnapname,path])

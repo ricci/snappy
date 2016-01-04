@@ -4,15 +4,15 @@ import sys
 import snappylib.snapshot as snapshot
 import snappylib.zfs as zfs
 import snappylib.tarsnap as tarsnap
-import snappylib.config as config
+from snappylib.configuration import config
 
 def getPlace():
     if len(sys.argv) < 1:
       sys.exit("ERROR: place requrired")
 
     name = sys.argv.pop(0)
-    if name in config.world.places:
-        return config.world.places[name]
+    if name in config.places:
+        return config.places[name]
     else:
         sys.exit("ERROR: Specified nonexistent place {}".format(name))
 

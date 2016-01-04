@@ -6,7 +6,7 @@ import snappylib.util as util
 from snappylib.snapshot import Snapshot, snapshots
 import snappylib.zfs as zfs
 import snappylib.tarsnap as tarsnap
-import snappylib.config as config
+from snappylib.configuration import config
 
 class Command:
     ARG_PLACE = "place"
@@ -52,7 +52,7 @@ newCommand("check", None, "Perform some configuration checks", check)
 
 def list():
     util.loadSnapshots()
-    for name, place in sorted(config.world.places.items()):
+    for name, place in sorted(config.places.items()):
         print("***** %s (%s)" % (name,place.path))
         Snapshot.printHeader()
         for stamp in sorted(snapshots[name].keys(),key = lambda i: int(i)):
@@ -79,7 +79,7 @@ newCommand("snapzfs", [ Command.ARG_PLACE ], "Create a new ZFS snapshot",
 def snapTS():
     snap = util.getSnapshot()
     # XXX: Crappy to get a snap object and pull out the stamp
-    tarsnap.createSnapshot(world.config.places[snap._place],str(snap._stamp))
+    tarsnap.createSnapshot(config.places[snap._place],str(snap._stamp))
 
 newCommand("snapts", [ Command.ARG_ID ], "Create a tarsnap snapshot from an existing ZFS snap",
         snapTS)

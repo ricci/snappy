@@ -3,11 +3,7 @@
 import sys
 import snappylib.place as place
 import snappylib.commands as commands
-import snappylib.config as config
-
-# XXX: should be in a config file
-#place.Place("test", "/test")
-
+import snappylib.configuration as configuration
 
 if len(sys.argv) < 2:
     commands.usage.call()
@@ -16,5 +12,5 @@ else:
     # Special case for the check command - it will want control over loading
     # the ini file itself
     if sys.argv[0] != "check":
-        config.loadINI()
+        configuration.loadINI()
     commands.byname.get(sys.argv.pop(0), commands.usage).call()
