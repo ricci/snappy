@@ -1,10 +1,13 @@
 #!/usr/bin/env/python3
 
 import sys
+import os.path
+import configparser
 import snappylib.snapshot as snapshot
 import snappylib.zfs as zfs
 import snappylib.tarsnap as tarsnap
 from snappylib.configuration import config
+import snappylib.configuration as configuration
 
 def getPlace():
     if len(sys.argv) < 1:
@@ -60,7 +63,7 @@ def check():
         print("    passed")
     def skipCheck(text):
         print("    skipped ({:s})".format(text))
-    def failCheck(text,output):
+    def failCheck(text,output = None):
         print("    failed: {:s}".format(text))
         if output:
             print("----------------------------------------------------------------------")
@@ -70,5 +73,41 @@ def check():
     Run a little test to see whether everything appears to be configured properly
     """
 
-    startCheck("configuration file")
-    skipCheck("not implemented")
+    startCheck("whether configuration file exists") 
+    # XXX Specify alternate config file
+    if os.path.isfile("snappy.ini"):
+        passCheck()
+    else:
+        failCheck("No configuration file (snappy.ini) found")
+
+    startCheck("whether configuration file parses") 
+    try:
+        configuration.loadINI("snappy.ini")
+    except configparser.Error as e:
+        failCheck("Error parsing configuration file (snappy.ini)", str(e))
+    else:
+        passCheck()
+
+    startCheck("for ZFS binary")
+    if os.path.isfile(config.zfs_bin) and os.access(config.zfs_bin, os.X_OK):
+        passCheck()
+    else:
+        failCheck("Can't find ZFS executable","""
+        Can't find (or execute) the ZFS executable at {}.
+        If it's installed somewhere else, set the zfs_path variable
+        in the [global] section of your config file
+        """.format(config.zfs_bin))
+
+    startCheck("for tarsnap binary")
+    if os.path.isfile(config.tarsnap_bin) and os.access(config.zfs_bin, os.X_OK):
+        passCheck()
+    else:
+        failCheck("Can't find tarsnap executable","""
+        Can't find (or execute) the tarsnap executable at {}.
+
+        On FreeBSD, install it with 'pkg install tarsnap'
+
+        If it's installed somewhere else, set the tarsnap_path variable
+        in the [global] section of your config file
+        """.format(config.tarsnap_bin))
+
