@@ -2,30 +2,30 @@
 
 import sys
 import snappylib.snapshot as snapshot
-from snappylib.place import Place
 import snappylib.zfs as zfs
 import snappylib.tarsnap as tarsnap
+import snappylib.config as config
 
 def getPlace():
     if len(sys.argv) < 1:
       sys.exit("ERROR: place requrired")
 
-    place = sys.argv.pop(0)
-    if Place.hasName(place):
-        return Place.byName(place)
+    name = sys.argv.pop(0)
+    if name in config.world.places:
+        return config.world.places[name]
     else:
-        sys.exit("ERROR: Specified nonexistent place {}".format(place))
+        sys.exit("ERROR: Specified nonexistent place {}".format(name))
 
 def getSnap(place):
     loadSnapshots()
-    if not place.name() in snapshot.snapshots:
-        sys.exit("ERROR: Specified nonexistent place {}".format(place))
+    if not place.name in snapshot.snapshots:
+        sys.exit("ERROR: Specified nonexistent place {}".format(place.name))
     if len(sys.argv) < 1:
         sys.exit("ERROR: snapshot ID requrired")
     snap = sys.argv.pop(0)
-    if not snap in snapshot.snapshots[place.name()]:
+    if not snap in snapshot.snapshots[place.name]:
         sys.exit("ERROR: Specified nonexistent snapshot {:d}".format(snap))
-    return snapshot.snapshots[place.name()][snap]
+    return snapshot.snapshots[place.name][snap]
 
 def getSnapshot():
     """

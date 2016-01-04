@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import configparser
-import snappylib.place as Place
+import snappylib.place as place
 
 # Since it only really makes sense to have one configuration at a time, access
 # it globally through this variable
@@ -18,7 +18,9 @@ class Configuration:
         self.zfs_extra_args = []
         self.tarsnap_bin = Configuration.TARSNAP_BIN
         self.tarsnap_extra_args = []
-        self.places = []
+        self._placelist = [ ]
+        self.places = { }
+        self.paths = { }
 
 def loadINI(filename = "snappy.ini"):
     global world
@@ -33,5 +35,7 @@ def loadINI(filename = "snappy.ini"):
             world.zfs_extra_args = section.get("zfs_extra_args","").split()
             world.tarsnap_extra_args = section.get("tarsnap_extra_args","").split()
         else:
-            place = Place(name,section.get("path"))
-            world.places.append(place)
+            where = place.Place(name,section.get("path"))
+            world._placelist.append(where)
+            world.places[where.name] = where
+            world.paths[where.path] = where

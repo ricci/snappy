@@ -2,10 +2,11 @@
 
 import re
 import hashlib
-
 from subprocess import check_output
-from snappylib.place import Place
+
 import arrow
+
+from snappylib.place import Place
 
 ### XXX I think these are more properly handled in a top level __init__()?
 ### ... actually I think I need to figure out something signficantly different
@@ -57,7 +58,7 @@ class Snapshot:
 
     def factory(place,stamp):
         if isinstance(place,Place):
-            placename = place.name()
+            placename = place.name
         else:
             placename = place
         if place in snapshots and stamp in snapshots[placename]:

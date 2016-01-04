@@ -1,7 +1,6 @@
 #!/usr/bin/env/python3
 
 from snappylib.snapshot import Snapshot, exists, snapshots
-from snappylib.place import Place
 import snappylib.zfs as zfs
 import snappylib.config as config
 from subprocess import check_output
@@ -30,17 +29,17 @@ def initCache():
 
 def deleteSnap(snap):
     print("deleteTS: %s" % snap._tarsnap)
-    check_output([config.world.tarsnap_bin] + config.world.tarsnap_etra_args + ["-d","-f",snap._tarsnap])
+    check_output([config.world.tarsnap_bin] + config.world.tarsnap_extra_args + ["-d","-f",snap._tarsnap])
 
 def createSnapshot(place, stamp):
     initCache()
     # Force ZFS cache - probably has already been initialized, but be safe
     zfs.initCache()
 
-    if not exists(place.name(), stamp) or not snapshots[place.name()][stamp].hasZFS():
+    if not exists(place.name, stamp) or not snapshots[place.name][stamp].hasZFS():
         sys.exit("ERROR: Trying to create tarsnap snapshot but no ZFS snap ({},{})".format(place,stamp,))
 
-    tssnapname = "snappy-%s-%s" % (place.name(), stamp)
+    tssnapname = "snappy-%s-%s" % (place.name, stamp)
     print("snapTS: %s" % tssnapname)
-    path = zfs.pathForSnapshot(snapshots[place.name()][stamp])
+    path = zfs.pathForSnapshot(snapshots[place.name][stamp])
     check_output([config.world.tarsnap_bin] + config.world.tarsnap_extra_args + ["-c","-f",tssnapname,path])
