@@ -57,14 +57,19 @@ def loadSnapshots():
     tarsnap.initCache()
 
 def check():
+    checkFailed = False
     def startCheck(text):
+        nonlocal checkFailed
         print("### Checking {:s} ...".format(text))
+        checkFailed = False
     def passCheck():
         print("    passed")
     def skipCheck(text):
         print("    skipped ({:s})".format(text))
     def failCheck(text,output = None):
+        nonlocal checkFailed
         print("    failed: {:s}".format(text))
+        checkFailed = True
         if output:
             print("----------------------------------------------------------------------")
             print(output)
@@ -111,3 +116,24 @@ def check():
         in the [global] section of your config file
         """.format(config.tarsnap_bin))
 
+    startCheck("for places to back up")
+    if not config.places:
+        failCheck("No places defined","""
+        Your config file doesn't define anyplace to back up. Each location must
+        look, at a minimum, like this:
+
+        [place_name]
+        path = /path/to/somehwere
+        """)
+    else:
+        for name, place in config.places.items():
+            if not place.path:
+                failCheck("No path defined for [{}]".format(place.name))
+            if not zfs.checkForRoot(place.path):
+                failCheck("{} ({}) is not the root of a ZFS filesystem".format(place.path,place.name),"""
+                snappy requires that each place to back up be the root of a ZFS
+                filesystem. If you want to back up a smaller unit, simply create
+                a new filesystem at the desired mountpoint
+                """)
+    if not checkFailed:
+        passCheck()

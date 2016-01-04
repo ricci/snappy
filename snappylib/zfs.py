@@ -53,3 +53,7 @@ def pathForSnapshot(snap):
     path = "{}/.zfs/snapshot/{}".format(zfsmap[dataset],snapname)
     print("pathForSnapshot {} {}".format(snapname,path))
     return path
+
+def checkForRoot(path):
+    initCache()
+    return path in zfsmap
