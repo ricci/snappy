@@ -1,11 +1,23 @@
 #!/usr/bin/env/python3.5
 
+import subprocess
+
 from snappylib.snapshot import Snapshot, exists, snapshots
 import snappylib.zfs as zfs
-from subprocess import check_output
 from snappylib.configuration import config
 
 import sys
+
+def runTarsnap(args):
+    command = [config.tarsnap_bin] + config.tarsnap_extra_args + args
+    result = subprocess.run(command,
+                stdout = subprocess.PIPE, stderr = subprocess.PIPE,
+                stdin = subprocess.DEVNULL, universal_newlines = True)
+    try:
+        result.check_returncode()
+        return result
+    except subprocess.CalledProcessError as e:
+        sys.exit("Error running tarsnap:\nCommand: {}\nSTDOUT:\n{}\nSTDERR:\n{}\n".format(" ".join(command),result.stdout,result.stderr))
 
 _initialized = False
 
@@ -14,10 +26,8 @@ def initCache():
     if _initialized:
         return None
 
-    tsout = check_output([config.tarsnap_bin] + 
-            config.tarsnap_extra_args + ["--list-archives"])
-    for line in iter(tsout.splitlines()):
-        line = line.decode('utf-8')
+    tsout = runTarsnap(["--list-archives"])
+    for line in iter(tsout.stdout.splitlines()):
         if Snapshot.isSnappyTS(line):
             groups = Snapshot.isSnappyTS(line)
             place = groups.group(1)
@@ -29,7 +39,7 @@ def initCache():
 
 def deleteSnap(snap):
     print("deleteTS: %s" % snap._tarsnap)
-    check_output([config.tarsnap_bin] + config.tarsnap_extra_args + ["-d","-f",snap._tarsnap])
+    runTarsnap(["-d","-f",snap._tarsnap])
 
 def createSnapshot(place, stamp, bwlimit = None):
     initCache()
@@ -46,4 +56,4 @@ def createSnapshot(place, stamp, bwlimit = None):
     tssnapname = "snappy-%s-%s" % (place.name, stamp)
     print("snapTS: %s" % tssnapname)
     path = zfs.pathForSnapshot(snapshots[place.name][stamp])
-    check_output([config.tarsnap_bin] + config.tarsnap_extra_args + extraArgs + ["-c","-f",tssnapname,path])
+    runTarsnap(extraArgs + ["-c","-f",tssnapname,path])
