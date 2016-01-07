@@ -31,7 +31,7 @@ def deleteSnap(snap):
     print("deleteTS: %s" % snap._tarsnap)
     check_output([config.tarsnap_bin] + config.tarsnap_extra_args + ["-d","-f",snap._tarsnap])
 
-def createSnapshot(place, stamp):
+def createSnapshot(place, stamp, bwlimit = None):
     initCache()
     # Force ZFS cache - probably has already been initialized, but be safe
     zfs.initCache()
@@ -39,7 +39,11 @@ def createSnapshot(place, stamp):
     if not exists(place.name, stamp) or not snapshots[place.name][stamp].hasZFS():
         sys.exit("ERROR: Trying to create tarsnap snapshot but no ZFS snap ({},{})".format(place,stamp,))
 
+    extraArgs = [ ]
+    if bwlimit:
+        extraArgs.extend(["--maxbw",str(bwlimit)])
+
     tssnapname = "snappy-%s-%s" % (place.name, stamp)
     print("snapTS: %s" % tssnapname)
     path = zfs.pathForSnapshot(snapshots[place.name][stamp])
-    check_output([config.tarsnap_bin] + config.tarsnap_extra_args + ["-c","-f",tssnapname,path])
+    check_output([config.tarsnap_bin] + config.tarsnap_extra_args + extraArgs + ["-c","-f",tssnapname,path])
