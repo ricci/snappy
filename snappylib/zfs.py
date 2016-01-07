@@ -1,30 +1,41 @@
 #!/usr/bin/env python3.5
 
-from subprocess import check_output
-
+import subprocess
+import sys
 from snappylib.snapshot import Snapshot
 from snappylib.configuration import config
 
 zfsmap = { }
 _initialized = False
 
+def runZFS(args):
+    command = [config.zfs_bin] + config.zfs_extra_args + args
+    result = subprocess.run(command,
+                stdout = subprocess.PIPE, stderr = subprocess.PIPE,
+                stdin = subprocess.DEVNULL, universal_newlines = True)
+    try:
+        result.check_returncode()
+        return result
+    except subprocess.CalledProcessError as e:
+        sys.exit("Error running ZFS:\nCommand: {}\nSTDOUT:\n{}\nSTDERR:\n{}\n".format(" ".join(command),result.stdout,result.stderr))
+
 def initCache():
     global _initialized
     if _initialized:
         return None
 
-    zfsout = check_output([config.zfs_bin,"list","-Hp"])
-    for line in iter(zfsout.splitlines()):
-        arr = line.decode('utf-8').split()
+    zfsreturn = runZFS(["list","-Hp"])
+    for line in iter(zfsreturn.stdout.splitlines()):
+        arr = line.split()
         path, dataset = arr[4],arr[0]
         zfsmap[path] = dataset
         zfsmap[dataset] = path
         if path in config.paths:
             zfsmap[config.paths[path].name] = dataset
 
-    zfsout = check_output([config.zfs_bin,"list","-Hp","-t","snap"])
-    for line in iter(zfsout.splitlines()):
-        arr = line.decode('utf-8').split()
+    zfsreturn = runZFS(["list","-Hp","-t","snap"])
+    for line in iter(zfsreturn.stdout.splitlines()):
+        arr = line.split()
         snapname = arr[0]
         dataset,snap = snapname.split('@')
         if Snapshot.isSnappyZFS(snap) and dataset in zfsmap and zfsmap[dataset] in config.paths:
@@ -35,7 +46,7 @@ def initCache():
 
 def deleteSnap(snap):
     print("deleteZFS: %s" % snap._zfs)
-    check_output([config.zfs_bin, "destroy", "-v", snap._zfs])
+    runZFS(["destroy", "-v", snap._zfs])
 
 def createSnapshot(place,stamp):
     initCache()
@@ -43,7 +54,7 @@ def createSnapshot(place,stamp):
     zfssnapname = "snappy-%s" % stamp 
     zfsfullsnapname = "%s@%s" % (zfsmap[place.name],zfssnapname)
     print("snapZFS: %s" % zfsfullsnapname)
-    check_output([config.zfs_bin, "snapshot", zfsfullsnapname])
+    runZFS(["snapshot", zfsfullsnapname])
     # Place this in the global list in case tarsnap is going to want it
     newsnapshot = Snapshot.factory(place,stamp)
     newsnapshot.setZFS(zfsfullsnapname)
