@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.5
 
+from enum import Enum
 import re
 import hashlib
 from subprocess import check_output
@@ -18,6 +19,19 @@ def exists(place,snap):
     return place in snapshots and snap in snapshots[place]
 
 class Snapshot:
+    class Status(Enum):
+        none = 0
+        complete = 1
+        partial = 2
+
+    def statusStr(status):
+        if status == Snapshot.Status.none:
+            return "No"
+        elif status == Snapshot.Status.complete:
+            return "Yes"
+        else:
+            return "Part"
+            
 
     HASH = hashlib.sha256
     HASH_LEN = 4
@@ -26,7 +40,7 @@ class Snapshot:
         return re.match(r"snappy-(\d+)",snap)
 
     def isSnappyTS(snap):
-        return re.match(r"snappy-(\w+)-(\d+)",snap)
+        return re.match(r"snappy-(\w+)-(\d+)(\.part)?$",snap)
 
     def __init__(self,place,stamp):
         self._place = place
@@ -38,7 +52,10 @@ class Snapshot:
         snapshots[place][stamp] = self
         
     def hasZFS(self):
-        return (self._zfs is not None)
+        if self._zfs is not None:
+            return Snapshot.Status.complete
+        else:
+            return Snapshot.Status.none
 
     def setZFS(self,zfsname):
         self._zfs = zfsname
@@ -47,14 +64,21 @@ class Snapshot:
         self._tarsnap = tarsnapname
 
     def hasTarsnap(self):
-        return (self._tarsnap is not None)
+        if self._tarsnap is not None:
+            match = Snapshot.isSnappyTS(self._tarsnap)
+            if match.group(3):
+                return Snapshot.Status.partial
+            else:
+                return Snapshot.Status.complete
+        else:
+            return Snapshot.Status.none
 
     def printHeader():
         print("{:5}   {:<20s}   {:5}   {:5}".format("ID","When","ZFS","TS"))
 
     def printListing(self):
         #print("{:10}   {:<20s}   {!r:5}   {!r:5}".format(self._stamp,arrow.get(self._stamp).humanize(), self.hasZFS(), self.hasTarsnap()))
-        print("{:5}   {:<20s}   {!r:5}   {!r:5}".format(self.shortID(),arrow.get(self._stamp).humanize(), self.hasZFS(), self.hasTarsnap()))
+        print("{:5}   {:<20s}   {:5}   {:5}".format(self.shortID(),arrow.get(self._stamp).humanize(), Snapshot.statusStr(self.hasZFS()), Snapshot.statusStr(self.hasTarsnap())))
 
     def factory(place,stamp):
         if isinstance(place,Place):
