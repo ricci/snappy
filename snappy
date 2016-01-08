@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.5
 
 import sys
+import os.path
 import snappylib.place as place
 import snappylib.commands as commands
 import snappylib.configuration as configuration
@@ -12,5 +13,8 @@ else:
     # Special case for the check command - it will want control over loading
     # the ini file itself
     if sys.argv[0] != "check":
-        configuration.loadINI()
+        configfile = None
+        if os.path.isfile(configuration.GLOBALFILE):
+            configfile = configuration.GLOBALFILE
+        configuration.loadINI(configfile)
     commands.byname.get(sys.argv.pop(0), commands.usage).call()

@@ -3,6 +3,8 @@
 import configparser
 import snappylib.place as place
 
+GLOBALFILE = "/etc/snappy.conf"
+
 class Configuration:
 
     # Default paths, can be overriden
