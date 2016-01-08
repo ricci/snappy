@@ -46,7 +46,7 @@ def createSnapshot(place, stamp, bwlimit = None):
     # Force ZFS cache - probably has already been initialized, but be safe
     zfs.initCache()
 
-    if not exists(place.name, stamp) or not snapshots[place.name][stamp].hasZFS():
+    if not exists(place.name, stamp) or not snapshots[place.name][stamp].hasZFS() == Snahshot.Status.complete:
         sys.exit("ERROR: Trying to create tarsnap snapshot but no ZFS snap ({},{})".format(place,stamp,))
 
     extraArgs = [ ]

@@ -106,7 +106,7 @@ newCommand("snapts", [ Command.ARG_ID ], "Create a tarsnap snapshot from an exis
 def rmTS():
     util.loadSnapshots()
     snap = util.getSnapshot()
-    if snap.hasTarsnap():
+    if snap.hasTarsnap() == Snapshot.Status.complete or snap.hasTarsnap() == Snapshot.Status.partial:
         tarsnap.deleteSnap(snap)
 
 newCommand("rmts", [ Command.ARG_ID ], "Remove the tarsnap half of an existing snap",
@@ -115,9 +115,9 @@ newCommand("rmts", [ Command.ARG_ID ], "Remove the tarsnap half of an existing s
 def nuke():
     util.loadSnapshots()
     snap = util.getSnapshot()
-    if snap.hasTarsnap():
+    if snap.hasTarsnap() == Snapshot.Status.complete or snap.hasTarsnap() == Snapshot.Status.partial:
         tarsnap.deleteSnap(snap)
-    if snap.hasZFS():
+    if snap.hasZFS() == Snapshot.Status.complete:
         zfs.deleteSnap(snap)
 
 newCommand("nuke", [Command.ARG_ID ], "Remove snapsot", nuke)
