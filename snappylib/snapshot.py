@@ -39,14 +39,22 @@ class Snapshot:
     def isSnappyZFS(snap):
         return re.match(r"snappy-(\d+)",snap)
 
+    #def isSnappyTS(snap):
+    #    return re.match(r"snappy-(\w+)-(\d+)$",snap)
+
+    #def isSnappyTSIntermediate(snap):
+    #    return re.match(r"snappy-(\w+)-(\d+)-intermediate-(\d+)$",snap)
+
     def isSnappyTS(snap):
-        return re.match(r"snappy-(\w+)-(\d+)(\.part)?$",snap)
+        return re.match(r"snappy-(\w+)-(\d+)(-intermediate-(\d+))?(\.part)?$",snap)
 
     def __init__(self,place,stamp):
         self._place = place
         self._stamp = int(stamp)
         self._zfs = None
         self._tarsnap = None
+        self._tarsnap_partials = []
+        self._tarsnap_intermediates = []
         if not place in snapshots:
             snapshots[place] = { }
         snapshots[place][stamp] = self
@@ -61,24 +69,28 @@ class Snapshot:
         self._zfs = zfsname
 
     def setTarsnap(self, tarsnapname):
-        self._tarsnap = tarsnapname
+        groups = Snapshot.isSnappyTS(tarsnapname)
+        if groups.group(5):
+            self._tarsnap_partials.append(tarsnapname)
+        elif groups.group(4):
+            self._tarsnap_intermediates.append(tarsnapname)
+        else:
+            self._tarsnap = tarsnapname
 
     def hasTarsnap(self):
-        if self._tarsnap is not None:
-            match = Snapshot.isSnappyTS(self._tarsnap)
-            if match.group(3):
-                return Snapshot.Status.partial
-            else:
-                return Snapshot.Status.complete
+        if self._tarsnap:
+            return Snapshot.Status.complete
+        elif self._tarsnap_partials or self._tarsnap_intermediates:
+            return Snapshot.Status.partial
         else:
             return Snapshot.Status.none
 
     def printHeader():
-        print("{:5}   {:<20s}   {:5}   {:5}".format("ID","When","ZFS","TS"))
+        print("{:5}   {:10}   {:<20s}   {:5}   {:5}".format("ID","Stamp","When","ZFS","TS"))
 
     def printListing(self):
         #print("{:10}   {:<20s}   {!r:5}   {!r:5}".format(self._stamp,arrow.get(self._stamp).humanize(), self.hasZFS(), self.hasTarsnap()))
-        print("{:5}   {:<20s}   {:5}   {:5}".format(self.shortID(),arrow.get(self._stamp).humanize(), Snapshot.statusStr(self.hasZFS()), Snapshot.statusStr(self.hasTarsnap())))
+        print("{:5}   {:10}   {:<20s}   {:5}   {:5}".format(self.shortID(),self._stamp,arrow.get(self._stamp).humanize(), Snapshot.statusStr(self.hasZFS()), Snapshot.statusStr(self.hasTarsnap())))
 
     def factory(place,stamp):
         if isinstance(place,Place):
