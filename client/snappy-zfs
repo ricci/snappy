@@ -1,0 +1,27 @@
+#!/bin/sh
+
+ZFS=zfs
+SRCVOL=$1
+DSTVOL=$2
+
+if ! [ ${1:+1} ]
+then
+    echo "ERROR: Need source volume"
+    exit 1;
+fi
+
+
+if ! [ ${2:+1} ]
+then
+    echo "ERROR: Need destination volume"
+    exit 1;
+fi
+
+SNAP=snappy-`date +%s`
+VERS_OLD=`zfs list -H -r -t snapshot -o name zroot/usr/home/ricci | grep snappy-incremental | cut -d@ -f2 | sed "s/snappy-incremental-//" | sort -n | tail -1`
+VERS_NEW=$(($VERS_OLD + 1))
+INCR_OLD="snappy-incremental-$VERS_OLD"
+INCR_NEW="snappy-incremental-$VERS_NEW"
+
+zfs snapshot $SRCVOL@$INCR_NEW && zfs send -i $INCR_OLD $SRCVOL@$INCR_NEW | zfs recv $DSTVOL@$SNAP
+# TODO: Remove source snapshot!

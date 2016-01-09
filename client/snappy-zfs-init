@@ -1,0 +1,20 @@
+#!/bin/sh
+
+ZFS=zfs
+SRCVOL=$1
+DSTVOL=$2
+
+if ! [ ${1:+1} ]
+then
+    echo "ERROR: Need source volume"
+    exit 1;
+fi
+
+
+if ! [ ${2:+1} ]
+then
+    echo "ERROR: Need destination volume"
+    exit 1;
+fi
+
+zfs snapshot $SRCVOL@snappy-incremental-1 && zfs send $SRCVOL@snappy-incremental-1 | zfs recv $DSTVOL
