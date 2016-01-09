@@ -2,6 +2,8 @@
 
 import subprocess
 
+import arrow
+
 from snappylib.snapshot import Snapshot, exists, snapshots
 import snappylib.zfs as zfs
 from snappylib.configuration import config
@@ -38,22 +40,40 @@ def initCache():
     _initialized = True
 
 def deleteSnap(snap):
-    print("deleteTS: %s" % snap._tarsnap)
-    runTarsnap(["-d","-f",snap._tarsnap])
+    if snap._tarsnap:
+        print("deleteTS: %s" % snap._tarsnap)
+        runTarsnap(["-d","-f",snap._tarsnap])
+
+    for partial in snap._tarsnap_partials + snap._tarsnap_intermediates:
+        print("Cleaning up %s" % partial)
+        runTarsnap(["-d","-f",partial])
 
 def createSnapshot(place, stamp, bwlimit = None):
     initCache()
     # Force ZFS cache - probably has already been initialized, but be safe
     zfs.initCache()
 
-    if not exists(place.name, stamp) or not snapshots[place.name][stamp].hasZFS() == Snahshot.Status.complete:
+    if not exists(place.name, stamp) or not snapshots[place.name][stamp].hasZFS() == Snapshot.Status.complete:
         sys.exit("ERROR: Trying to create tarsnap snapshot but no ZFS snap ({},{})".format(place,stamp,))
 
     extraArgs = [ ]
     if bwlimit:
         extraArgs.extend(["--maxbw",str(bwlimit)])
 
+    snap = snapshots[place.name][stamp]
+
+    path = zfs.pathForSnapshot(snap)
+    now = arrow.now().timestamp
+
+    intermediateName = "snappy-%s-%s-intermediate-%s" % (place.name, stamp, now)
+    print("snapTS: %s" % intermediateName)
+    result = runTarsnap(extraArgs + ["-c","-f",intermediateName,path])
+
     tssnapname = "snappy-%s-%s" % (place.name, stamp)
     print("snapTS: %s" % tssnapname)
-    path = zfs.pathForSnapshot(snapshots[place.name][stamp])
-    runTarsnap(extraArgs + ["-c","-f",tssnapname,path])
+    runTarsnap(["-c","-f",tssnapname,path])
+
+    for partial in [intermediateName] + snap._tarsnap_partials + snap._tarsnap_intermediates:
+        print("Cleaning up %s" % partial)
+        runTarsnap(["-d","-f",partial])
+
