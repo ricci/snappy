@@ -63,6 +63,15 @@ def list():
 
 newCommand("list", None, "List all snapshots", list)
 
+def summary():
+    util.loadSnapshots()
+    for name, place in sorted(config.places.items()):
+        count = len(snapshots[name])
+        recent = sorted(snapshots[name].keys(),key = lambda i: int(i)).pop()
+        print("{:<12s}   {:>5d} snapshots   {:<20s}".format(name,count,arrow.get(recent).humanize()))
+
+newCommand("summary", None, "Give a summary of snapshots", summary)
+
 def snapBoth():
     place = util.getPlace()
     now = arrow.now().timestamp
