@@ -1,0 +1,22 @@
+#!/bin/bash
+
+RSYNC=rsync
+BACKUPHOST=$1
+THISHOST=`hostname`
+LOCALDIR=$2/
+REMOTEDIR=/backup/$THISHOST/
+
+if ! [ ${1:+1} ]
+then
+    echo "ERROR: Need host"
+    exit 1;
+fi
+
+
+if ! [ ${2:+1} ]
+then
+    echo "ERROR: Need local path"
+    exit 1;
+fi
+
+$RSYNC --exclude-from=$LOCALDIR/.rsync-excludes -avzhe ssh --delete $LOCALDIR $BACKUPHOST:$REMOTEDIR && ssh $BACKUPHOST snappy snapzfs $THISHOST
