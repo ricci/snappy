@@ -1,6 +1,6 @@
 #!/bin/sh
 
-ZFS=zfs
+ZFS=/sbin/zfs
 SRCVOL=$1
 DSTVOL=$2
 
