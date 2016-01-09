@@ -24,14 +24,17 @@ def initCache():
     if _initialized:
         return None
 
-    zfsreturn = runZFS(["list","-Hp"])
+    zfsreturn = runZFS(["list","-Hp","-o","name,mountpoint,usedbydataset,usedbysnapshots"])
     for line in iter(zfsreturn.stdout.splitlines()):
         arr = line.split()
-        path, dataset = arr[4],arr[0]
+        dataset, path, data_used, snap_used = arr
         zfsmap[path] = dataset
         zfsmap[dataset] = path
         if path in config.paths:
-            zfsmap[config.paths[path].name] = dataset
+            place = config.paths[path]
+            zfsmap[place.name] = dataset
+            place.data_used = data_used
+            place.snap_used = snap_used
 
     zfsreturn = runZFS(["list","-Hp","-t","snap"])
     for line in iter(zfsreturn.stdout.splitlines()):

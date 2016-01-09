@@ -137,3 +137,6 @@ def check():
                 """)
     if not checkFailed:
         passCheck()
+
+def readableBytes(bytes):
+    return "{:0.03f}GB".format(float(bytes) / (10 **9))

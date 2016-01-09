@@ -56,7 +56,7 @@ newCommand("check", None, "Perform some configuration checks", check)
 def list():
     util.loadSnapshots()
     for name, place in sorted(config.places.items()):
-        print("***** %s (%s)" % (name,place.path))
+        print("***** %s (%s) %s / %s" % (name,place.path,util.readableBytes(place.data_used),util.readableBytes(place.snap_used)))
         Snapshot.printHeader()
         for stamp in sorted(snapshots[name].keys(),key = lambda i: int(i)):
             snapshots[name][stamp].printListing()
