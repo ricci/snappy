@@ -18,10 +18,10 @@ then
 fi
 
 SNAP=snappy-`date +%s`
-VERS_OLD=`zfs list -H -r -t snapshot -o name zroot/usr/home/ricci | grep snappy-incremental | cut -d@ -f2 | sed "s/snappy-incremental-//" | sort -n | tail -1`
+VERS_OLD=`$ZFS list -H -r -t snapshot -o name zroot/usr/home/ricci | grep snappy-incremental | cut -d@ -f2 | sed "s/snappy-incremental-//" | sort -n | tail -1`
 VERS_NEW=$(($VERS_OLD + 1))
 INCR_OLD="snappy-incremental-$VERS_OLD"
 INCR_NEW="snappy-incremental-$VERS_NEW"
 
-zfs snapshot $SRCVOL@$INCR_NEW && zfs send -i $INCR_OLD $SRCVOL@$INCR_NEW | zfs recv $DSTVOL@$SNAP
+$ZFS snapshot $SRCVOL@$INCR_NEW && $ZFS send -i $INCR_OLD $SRCVOL@$INCR_NEW | $ZFS recv $DSTVOL@$SNAP
 # TODO: Remove source snapshot!
