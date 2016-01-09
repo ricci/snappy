@@ -19,4 +19,4 @@ then
     exit 1;
 fi
 
-$RSYNC --exclude-from=$LOCALDIR/.rsync-excludes -avzhe ssh --delete $LOCALDIR $BACKUPHOST:$REMOTEDIR && ssh $BACKUPHOST 'cd snappy; ./snappy snapzfs $THISHOST'
+$RSYNC --exclude-from=$LOCALDIR/.rsync-excludes -avzhe ssh --delete $LOCALDIR $BACKUPHOST:$REMOTEDIR && ssh $BACKUPHOST snappy snapzfs $THISHOST
