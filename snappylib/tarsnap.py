@@ -1,6 +1,7 @@
 #!/usr/bin/env/python3.5
 
 import subprocess
+import os
 
 import arrow
 
@@ -23,19 +24,56 @@ def runTarsnap(args):
 
 _initialized = False
 
+CACHE_FILE="/tmp/snappy.tarsnap.cache"
+
+cache = []
+def readCache():
+    global cache
+    if os.path.isfile(CACHE_FILE):
+        cache = open(CACHE_FILE).readlines()
+
+def writeCache():
+    global cache
+    try:
+        f = open(CACHE_FILE,"w")
+        f.writelines("\n".join(cache))
+        f.close()
+    except IOError:
+        # just do nothing - I think in the future, we will
+        # do something clever that tells other users they should consider the
+        # contents of the file to be invalid
+        pass
+
+def addToCache(entry):
+    global cache
+    cache.append(entry)
+    writeCache()
+
+def removeFromCache(entry):
+    global cache
+    cache.remove(entry)
+    writeCache()
+
 def initCache():
     global _initialized
+    global cache
     if _initialized:
         return None
 
-    tsout = runTarsnap(["--list-archives"])
-    for line in iter(tsout.stdout.splitlines()):
+    if os.path.isfile(CACHE_FILE):
+        readCache()
+    else:
+        tsout = runTarsnap(["--list-archives"])
+        cache = tsout.stdout.splitlines()
+
+    for line in cache:
         if Snapshot.isSnappyTS(line):
             groups = Snapshot.isSnappyTS(line)
             place = groups.group(1)
             stamp = groups.group(2)
             newsnapshot = Snapshot.factory(place,stamp)
             newsnapshot.setTarsnap(line.rstrip())
+    writeCache()
 
     _initialized = True
 
@@ -43,10 +81,12 @@ def deleteSnap(snap):
     if snap._tarsnap:
         print("deleteTS: %s" % snap._tarsnap)
         runTarsnap(["-d","-f",snap._tarsnap])
+        removeFromCache(snap._tarsnap)
 
     for partial in snap._tarsnap_partials + snap._tarsnap_intermediates:
         print("Cleaning up %s" % partial)
         runTarsnap(["-d","-f",partial])
+        removeFromCache(partial)
 
 def createSnapshot(place, stamp, bwlimit = None):
     initCache()
@@ -68,12 +108,15 @@ def createSnapshot(place, stamp, bwlimit = None):
     intermediateName = "snappy-%s-%s-intermediate-%s" % (place.name, stamp, now)
     print("snapTS: %s" % intermediateName)
     result = runTarsnap(extraArgs + ["-c","-f",intermediateName,path])
+    addToCache(intermediateName)
 
     tssnapname = "snappy-%s-%s" % (place.name, stamp)
     print("snapTS: %s" % tssnapname)
     runTarsnap(["-c","-f",tssnapname,path])
+    addToCache(tssnapname)
 
     for partial in [intermediateName] + snap._tarsnap_partials + snap._tarsnap_intermediates:
         print("Cleaning up %s" % partial)
         runTarsnap(["-d","-f",partial])
+        removeFromCache(partial)
 
