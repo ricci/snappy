@@ -90,24 +90,33 @@ newCommand("snapzfs", [ Command.ARG_PLACE ], "Create a new ZFS snapshot",
 
 def snapTS():
     snap = util.getSnapshot()
+    bwlimit = None
+    timelimit = None
     if len(sys.argv) > 0:
         limittext = sys.argv.pop(0)
-        match = re.match("(\d+)([KMG])",limittext)
+        match = re.match("(\d+)([KMGsmh])",limittext)
         if not match:
-            sys.exit("Bandwidth limit must be <INT>[K|M|G]")
+            sys.exit("Limit must be <INT>[K|M|G] or <INT>[s|m|h]")
         else:
             if match.group(2) == "K":
                 bwlimit = int(match.group(1)) * 1000
             elif match.group(2) == "M":
                 bwlimit = int(match.group(1)) * 1000000
-            elif match.group(3) == "G":
+            elif match.group(2) == "G":
                 bwlimit = int(match.group(1)) * 1000000000
-        print("Will shutdown tarsnap after {} bytes".format(bwlimit))
-    else:
-        bwlimit = None
+            if match.group(2) == "s":
+                timelimit = int(match.group(1))
+            elif match.group(2) == "m":
+                timelimit = int(match.group(1)) * 60
+            elif match.group(2) == "h":
+                timelimit = int(match.group(1)) * 60 * 60
+        if bwlimit:
+            print("Will shutdown tarsnap after {} bytes".format(bwlimit))
+        if timelimit: 
+            print("Will shutdown tarsnap after {} seconds".format(timelimit))
 
     # XXX: Crappy to get a snap object and pull out the stamp
-    tarsnap.createSnapshot(config.places[snap._place],str(snap._stamp),bwlimit)
+    tarsnap.createSnapshot(config.places[snap._place],str(snap._stamp),bwlimit,timelimit)
 
 newCommand("snapts", [ Command.ARG_ID ], "Create a tarsnap snapshot from an existing ZFS snap",
         snapTS)

@@ -1,6 +1,7 @@
 #!/usr/bin/env/python3.5
 
 import subprocess
+import signal
 import os
 
 import arrow
@@ -11,16 +12,33 @@ from snappylib.configuration import config
 
 import sys
 
-def runTarsnap(args):
+class CheapoCompletedProcess:
+    def __init__(self):
+        self.returncode = None
+        self.stdout = None
+        self.stderr = None
+
+def runTarsnap(args, timeout = None):
     command = [config.tarsnap_bin] + config.tarsnap_extra_args + args
-    result = subprocess.run(command,
+    proc = subprocess.Popen(command,
                 stdout = subprocess.PIPE, stderr = subprocess.PIPE,
                 stdin = subprocess.DEVNULL, universal_newlines = True)
+    result = CheapoCompletedProcess()
     try:
-        result.check_returncode()
+        result.stdout, result.stderr = proc.communicate(timeout = timeout)
+        result.returncode = proc.wait()
+        if result.returncode:
+            sys.exit("Error running tarsnap:\nCommand: {}\nSTDOUT:\n{}\nSTDERR:\n{}\n".format(" ".join(command),result.stdout,result.stderr))
         return result
-    except subprocess.CalledProcessError as e:
-        sys.exit("Error running tarsnap:\nCommand: {}\nSTDOUT:\n{}\nSTDERR:\n{}\n".format(" ".join(command),result.stdout,result.stderr))
+    except subprocess.TimeoutExpired:
+        print("Tarsnap timed out, sending SIGQUIT...")
+        proc.send_signal(signal.SIGQUIT)
+        result.stdout, result.stderr = proc.communicate()
+        result.returncode = proc.wait()
+        print("Tarsnap finished")
+        if result.returncode:
+            sys.exit("Error running tarsnap:\nCommand: {}\nSTDOUT:\n{}\nSTDERR:\n{}\n".format(" ".join(command),result.stdout,result.stderr))
+        return result
 
 _initialized = False
 
@@ -88,7 +106,7 @@ def deleteSnap(snap):
         runTarsnap(["-d","-f",partial])
         removeFromCache(partial)
 
-def createSnapshot(place, stamp, bwlimit = None):
+def createSnapshot(place, stamp, bwlimit = None, timelimit = None):
     initCache()
     # Force ZFS cache - probably has already been initialized, but be safe
     zfs.initCache()
@@ -107,12 +125,12 @@ def createSnapshot(place, stamp, bwlimit = None):
 
     intermediateName = "snappy-%s-%s-intermediate-%s" % (place.name, stamp, now)
     print("snapTS: %s" % intermediateName)
-    result = runTarsnap(extraArgs + ["-c","-f",intermediateName,path])
+    result = runTarsnap(extraArgs + ["-c","-f",intermediateName,path], timeout = timelimit)
     addToCache(intermediateName)
 
     tssnapname = "snappy-%s-%s" % (place.name, stamp)
     print("snapTS: %s" % tssnapname)
-    runTarsnap(["-c","-f",tssnapname,path])
+    runTarsnap(["-c","-f",tssnapname,path], timeout = timelimit)
     addToCache(tssnapname)
 
     for partial in [intermediateName] + snap._tarsnap_partials + snap._tarsnap_intermediates:
