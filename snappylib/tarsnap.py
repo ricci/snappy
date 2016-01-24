@@ -48,13 +48,13 @@ cache = []
 def readCache():
     global cache
     if os.path.isfile(CACHE_FILE):
-        cache = open(CACHE_FILE).readlines()
+        cache = map(str.rstrip,open(CACHE_FILE).readlines())
 
 def writeCache():
     global cache
     try:
         f = open(CACHE_FILE,"w")
-        f.writelines("\n".join(cache))
+        f.writelines(map(lambda x: x + "\n",cache))
         f.close()
     except IOError:
         # just do nothing - I think in the future, we will
